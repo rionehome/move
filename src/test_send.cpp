@@ -3,7 +3,7 @@
 #include "sensor_msgs/Image.h"
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
-#include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 
 int main(int argc, char **argv) {
 
@@ -13,15 +13,15 @@ int main(int argc, char **argv) {
 
 	ros::NodeHandle n;
 
-	ros::Publisher pub = n.advertise<std_msgs::Float64>("/move/distance", 1000);
+	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/distance", 1000);
 
-	std_msgs::Float64 info;
+	std_msgs::Float64MultiArray info;
 
 	while (ros::ok()) {
 
 		scanf("%lf", &i);
 
-		info.data = i;
+		info.data[0] = i;
 
 		pub.publish(info);
 

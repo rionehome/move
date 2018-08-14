@@ -196,13 +196,13 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+add_executable(MovementAmountDesignation src/MovementAmountDesignation.cpp)
+target_link_libraries(MovementAmountDesignation  ${catkin_LIBRARIES})
 add_executable(amount_move src/amount_move.cpp)
 target_link_libraries(amount_move  ${catkin_LIBRARIES})
 add_executable(test_move src/test_move.cpp)
 target_link_libraries(test_move  ${catkin_LIBRARIES})
-add_executable(target_move src/target_move.cpp)
-target_link_libraries(target_move  ${catkin_LIBRARIES})
 add_executable(test_send src/test_send.cpp)
 target_link_libraries(test_send  ${catkin_LIBRARIES})
-add_executable(MovementAmountDesignation src/MovementAmountDesignation.cpp)
-target_link_libraries(MovementAmountDesignation  ${catkin_LIBRARIES})
+add_executable(target_move src/target_move.cpp)
+target_link_libraries(target_move  ${catkin_LIBRARIES})

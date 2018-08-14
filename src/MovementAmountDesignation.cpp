@@ -1,7 +1,8 @@
 #include "ros/ros.h"
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
-#include <std_msgs/Float64.h>
+//#include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <time.h>
 #include <stdio.h>
 #include <math.h>
@@ -59,8 +60,8 @@ private:
 	AngleProfile a_data;
 
 	void odometry(const nav_msgs::Odometry::ConstPtr &odom);
-	void line(const std_msgs::Float64::ConstPtr &msg) {this->straight(msg->data);}
-	void curve(const std_msgs::Float64::ConstPtr &msg) {this->turn(msg->data);}
+	void line(const std_msgs::Float64MultiArray::ConstPtr &msg) {this->straight(msg->data[0]);}
+	void curve(const std_msgs::Float64MultiArray::ConstPtr &msg) {this->turn(msg->data[0]);}
 	void straight(double distance);
 	void turn(double angle);
 	void acceleration_create(double x0, double y0, double max_velocity, double distance, double a, double v0);
@@ -209,7 +210,7 @@ void MovementAmountDesignation::straight(double distance) {
 		if (this->sign(v_data.distance) == this->sign(distance)) {
 			this->acceleration_create(this->odom_data.x, this->odom_data.y, 0.4, distance, ACCELERATION, this->acceleration_function(v_data.elapsed));
 		} else {
-			printf("Error!!\n");
+			printf("***************Error!!*****************\n");
 		}
 
 	}
