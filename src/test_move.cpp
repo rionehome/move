@@ -4,6 +4,7 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float64.h>
+#include <time.h>
 
 
 typedef struct {
@@ -95,26 +96,40 @@ void test_move(const std_msgs::Float64::ConstPtr& input) {
 
 }
 
-void process() {
-
-}
-
-
-
 int main(int argc, char **argv) {
+
+	geometry_msgs::Twist twist;
 
 	ros::init(argc, argv, "test_move");
 
-	ros::NodeHandle n;
+	double start = clock();
+	double step = 0;
 
-	ros::Subscriber sub = n.subscribe("/odom", 1000, odometry);
-	ros::Subscriber move = n.subscribe("/test_move", 1000, test_move);
+	ros::NodeHandle n;
+	int deb;
+
+	//ros::Subscriber sub = n.subscribe("/odom", 1000, odometry);
+	//ros::Subscriber move = n.subscribe("/test_move", 1000, test_move);
 
 	pub = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 
-	//thread t1(process); // 別スレッドでprocessの処理を行う
+	scanf("%d", &deb);
 
-	ros::spin();
+	while (1) {
+
+		step = clock();
+
+		printf("%f\n", step - start );
+
+		if ((step - start) / CLOCKS_PER_SEC > 8.795546204) break;
+
+		twist.angular.z = 1;
+		pub.publish(twist);
+
+	}
+
+	twist.angular.z = 0;
+	pub.publish(twist);
 
 	return 0;
 
