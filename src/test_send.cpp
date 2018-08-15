@@ -7,21 +7,30 @@
 
 int main(int argc, char **argv) {
 
-	double i;
+	double a, b, c, d;
 
 	ros::init(argc, argv, "test_send");
 
 	ros::NodeHandle n;
 
-	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/distance", 1000);
+	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/calc", 1000);
 
 	std_msgs::Float64MultiArray info;
 
 	while (ros::ok()) {
 
-		scanf("%lf", &i);
+		info.data.clear();
 
-		info.data[0] = i;
+		scanf("%lf", &a);
+		scanf("%lf", &c);
+
+		b = 0.3;
+		d = 1.5;
+
+		info.data.push_back(a);
+		info.data.push_back(b);
+		info.data.push_back(c);
+		info.data.push_back(d);
 
 		pub.publish(info);
 

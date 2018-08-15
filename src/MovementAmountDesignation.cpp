@@ -18,6 +18,7 @@ private:
 	ros::Subscriber odom;
 	ros::Subscriber amount_distance;
 	ros::Subscriber amount_angle;
+	ros::Subscriber calc_move;
 	ros::Publisher move;
 
 	typedef struct {
@@ -52,6 +53,7 @@ private:
 		double acceleration = 0;
 		double v = 0;
 		double initial_value = 0;
+		double deathbed_value = 0;
 		double angle = 0;
 	} AngleProfile;
 
@@ -60,13 +62,12 @@ private:
 	AngleProfile a_data;
 
 	void odometry(const nav_msgs::Odometry::ConstPtr &odom);
-	void line(const std_msgs::Float64MultiArray::ConstPtr &msg) {this->straight(msg->data[0]);}
-	void curve(const std_msgs::Float64MultiArray::ConstPtr &msg) {this->turn(msg->data[0]);}
-	void straight(double distance);
-	void turn(double angle);
+	void callback(const std_msgs::Float64MultiArray::ConstPtr &msg);
+	void straight(double distance, double v);
+	void turn(double angle, double v);
 	void acceleration_create(double x0, double y0, double max_velocity, double distance, double a, double v0);
 	double acceleration_function(double point);
-	void angular_acceleration_create(double t0, double max_velocity, double angle, double a, double vn);
+	void angular_acceleration_create(double t0, double max_velocity, double angle, double a, double v0, double vn);
 	double angular_acceleration_function(double angular_point);
 
 
@@ -92,8 +93,7 @@ MovementAmountDesignation::MovementAmountDesignation() {
 	printf("start class of 'MovementAmountDesignation'\n");
 
 	this->odom = n.subscribe("/odom", 1000, &MovementAmountDesignation::odometry, this);
-	this->amount_distance = n.subscribe("/move/distance", 1000, &MovementAmountDesignation::line, this);
-	this->amount_angle = n.subscribe("/move/angle", 1000, &MovementAmountDesignation::curve, this);
+	this->calc_move = n.subscribe("/move/calc", 1000, &MovementAmountDesignation::callback, this);
 	this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 
 }
@@ -102,6 +102,26 @@ MovementAmountDesignation::MovementAmountDesignation() {
 MovementAmountDesignation::~MovementAmountDesignation() {
 
 	printf("shutdown class of 'MovementAmountDesignation'\n");
+}
+
+void MovementAmountDesignation::callback(const std_msgs::Float64MultiArray::ConstPtr &msg) {
+
+	//[0]:liner距離 , [1]:liner速度 , [2]:angle距離 , [3]:angle速度
+
+	if (msg->data[2] == 0) { //linter
+
+		this->straight(msg->data[0], msg->data[1]);
+
+	} else if (msg->data[0] == 0) { //angle
+
+		this->turn(msg->data[2], msg->data[3]);
+
+	} else {
+
+		printf("error\n");
+
+	}
+
 }
 
 void MovementAmountDesignation::publish_twist(const ros::Publisher& pub, double x, double az) {
@@ -140,10 +160,13 @@ void MovementAmountDesignation::acceleration_create(double x0, double y0, double
 	this->v_data.p1 = (this->v_data.v - this->v_data.initial_value) / this->v_data.acceleration;
 	this->v_data.p2 = (this->v_data.acceleration * this->v_data.p3 - this->v_data.v) / this->v_data.acceleration;
 
-	if (this->v_data.p1 + this->v_data.p2 > this->v_data.p3) {
+	if (this->v_data.p1 + (this->v_data.p3 - this->v_data.p2) > this->v_data.p3) {
 		this->v_data.p1 = this->v_data.p3 / 2;
 		this->v_data.p2 = this->v_data.p3 / 2;
+		printf("short\n");
 	}
+
+	printf("%f   %f   %f\n", v_data.p1, v_data.p2, v_data.p3 );
 
 }
 
@@ -175,13 +198,13 @@ double MovementAmountDesignation::acceleration_function(double point) {
 }
 
 
-void MovementAmountDesignation::straight(double distance) {
+void MovementAmountDesignation::straight(double distance, double v) {
 
 	if (v_data.p3 == 0) {
 
-		ros::Rate loop_rate(20);
+		ros::Rate loop_rate(24);
 
-		this->acceleration_create(this->odom_data.x, this->odom_data.y, 0.3, distance, ACCELERATION, 0.08);
+		this->acceleration_create(this->odom_data.x, this->odom_data.y, v, distance, ACCELERATION, 0.08);
 
 		while (ros::ok()) {
 
@@ -208,34 +231,39 @@ void MovementAmountDesignation::straight(double distance) {
 	} else {
 
 		if (this->sign(v_data.distance) == this->sign(distance)) {
-			this->acceleration_create(this->odom_data.x, this->odom_data.y, 0.4, distance, ACCELERATION, this->acceleration_function(v_data.elapsed));
+
+			this->acceleration_create(this->odom_data.x, this->odom_data.y, v, distance, ACCELERATION, this->acceleration_function(v_data.elapsed));
+
 		} else {
+
 			printf("***************Error!!*****************\n");
+
 		}
 
 	}
 
 }
 
-void MovementAmountDesignation::angular_acceleration_create(double t0, double max_velocity, double angle, double a, double vn) {
+void MovementAmountDesignation::angular_acceleration_create(double t0, double max_velocity, double angle, double a, double v0, double vn) {
 
 	this->a_data.v = max_velocity;
 	this->a_data.acceleration = a;
-	this->a_data.initial_value = vn;
+	this->a_data.initial_value = v0;
+	this->a_data.deathbed_value = vn;
 	this->a_data.t0 = t0;
 	this->a_data.angle = angle;
 	this->a_data.p3 = abs(angle);
 
-	this->a_data.p1 = ((this->a_data.initial_value + this->a_data.acceleration * this->a_data.p3) - this->a_data.v) / this->a_data.acceleration;
-	this->a_data.p2 = this->a_data.p1;
+	this->a_data.p1 = (this->a_data.v - this->a_data.initial_value) / this->a_data.acceleration;
+	this->a_data.p2 = ((this->a_data.initial_value + this->a_data.acceleration * this->a_data.p3) - this->a_data.v) / this->a_data.acceleration;
 
-	printf("%f   %f   %f\n", a_data.p1, a_data.p2, a_data.p3 );
-
-	if (this->a_data.p3 - this->a_data.p2 > this->a_data.p3) {
+	if (this->a_data.p1 + (this->a_data.p3 - this->a_data.p2) > this->a_data.p3) {
 		this->a_data.p1 = this->a_data.p3 / 2;
 		this->a_data.p2 = this->a_data.p3 / 2;
 		printf("short\n");
 	}
+
+	printf("%f   %f   %f\n", a_data.p1, a_data.p2, a_data.p3 );
 
 }
 
@@ -245,7 +273,7 @@ double MovementAmountDesignation::angular_acceleration_function(double angular_p
 
 	if (angular_point >= 0 && angular_point < this->a_data.p1) {
 		printf("a_d1\n");
-		result = this->a_data.v;
+		result = this->a_data.acceleration * angular_point + this->a_data.initial_value;
 		//printf("%f\n", result);
 		return result;
 	}
@@ -266,7 +294,7 @@ double MovementAmountDesignation::angular_acceleration_function(double angular_p
 	return 0.45;
 }
 
-void MovementAmountDesignation::turn(double angle) {
+void MovementAmountDesignation::turn(double angle, double v) {
 
 	double stack_angle = 0.0;
 	double start_angle = this->angle_to_quaternion(this->odom_data.angular_w, this->odom_data.angular_z);
@@ -275,7 +303,7 @@ void MovementAmountDesignation::turn(double angle) {
 	double after_angle = start_angle;
 	double angular_velocity = 0.0;
 
-	this->angular_acceleration_create(start_angle, 2, angle, ANGLE_ACCELERATION, 0.45);
+	this->angular_acceleration_create(start_angle, v, angle, ANGLE_ACCELERATION, 0.45, 0.45);
 
 	ros::Rate loop_rate(24);
 
