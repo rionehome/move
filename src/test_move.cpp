@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 
 		printf("%f\n", step - start );
 
-		if ((step - start) / CLOCKS_PER_SEC > 8.795546204) break;
+		if ((step - start) / CLOCKS_PER_SEC > 1) break;
 
 		twist.angular.z = 1;
 		pub.publish(twist);
