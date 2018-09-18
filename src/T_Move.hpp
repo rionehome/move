@@ -16,53 +16,6 @@ class T_Move {
 public:
 	T_Move();
 	~T_Move();
-	void update() {ros::spinOnce();}
-
-	double getPosition(string element);
-	double getVelocity(string element);
-	double getDistance(double x0, double y0);
-	double getAngle(double a0);
-	void setOdometry(const nav_msgs::Odometry::ConstPtr &odom);
-
-	double toQuaternion_ang(double w, double z) {
-		return abs((z > 0 ? 1 : 360) - this->toAngle(acos(w) * 2));
-	}
-	double toQuaternion_rad(double w, double z) {
-		return acos(this->odom_data.angular_w) * (this->odom_data.angular_z > 0 ? 1 : -1) * 2;
-	}
-
-	double toAngle(double rad) {return rad * 180 / M_PI;}
-	double toRadian(double angle) {return (angle * M_PI) / 180;}
-	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
-
-	void createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0);
-	double calcStraight(double point);
-	void createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn);
-	double calcTurn(double angular_point);
-
-	double calcVelocityStraight(double k, double target);
-	double calcVelocityTurn(double k, double target);
-
-	void pubTwist(const ros::Publisher& pub, double v, double a);
-	void pubSignal(const ros::Publisher& pub, int s);
-	void pubVelocity(const ros::Publisher& pub, double v, double v_a, double a, double a_a);
-
-private:
-
-	double stackStraight = 0;
-	double stackTurn = 0;
-
-	typedef struct {
-		double x;
-		double y;
-		double z;
-		double angular_x;
-		double angular_y;
-		double angular_z;
-		double angular_w;
-		double linear_speed;
-		double angular_speed;
-	} Odometry;
 
 	typedef struct {
 		double x0 = 0;
@@ -90,9 +43,60 @@ private:
 		double angle = 0;
 	} AngleProfile;
 
-	Odometry odom_data;
 	VelocityProfile v_data;
 	AngleProfile a_data;
+
+	void update() {ros::spinOnce();}
+
+	double getPosition(string element);
+	double getVelocity(string element);
+	double getDistance(double x0, double y0);
+	double getAngle(double a0);
+	void setOdometry(const nav_msgs::Odometry::ConstPtr &odom);
+
+	double toQuaternion_ang(double w, double z) {
+		return abs((z > 0 ? 1 : 360) - this->toAngle(acos(w) * 2));
+	}
+	double toQuaternion_rad(double w, double z) {
+		return acos(this->odom_data.angular_w) * (this->odom_data.angular_z > 0 ? 1 : -1) * 2;
+	}
+
+	double toAngle(double rad) {return rad * 180 / M_PI;}
+	double toRadian(double angle) {return (angle * M_PI) / 180;}
+	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
+
+	//Distance
+	void createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0);
+	double calcStraight(double point);
+	void createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn);
+	double calcTurn(double angular_point);
+
+	//Velocity
+	double calcVelocityStraight(double k, double target);
+	double calcVelocityTurn(double k, double target);
+
+	void pubTwist(const ros::Publisher& pub, double v, double a);
+	void pubSignal(const ros::Publisher& pub, int s);
+	void pubVelocity(const ros::Publisher& pub, double v, double v_a, double a, double a_a);
+
+private:
+
+	double stackStraight = 0;
+	double stackTurn = 0;
+
+	typedef struct {
+		double x;
+		double y;
+		double z;
+		double angular_x;
+		double angular_y;
+		double angular_z;
+		double angular_w;
+		double linear_speed;
+		double angular_speed;
+	} Odometry;
+
+	Odometry odom_data;
 };
 
 T_Move::T_Move() {
@@ -110,7 +114,7 @@ double T_Move::getPosition(string element) {
 	if (element == "y") return this->odom_data.y;
 	if (element == "angle") return this->toQuaternion_ang(this->odom_data.angular_w, this->odom_data.angular_z);
 
-	return 1;
+	return -1;
 }
 
 //現在の速度を取得
