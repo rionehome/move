@@ -37,7 +37,7 @@ public:
 	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
 
 	//Distance
-	
+
 	//Velocity
 	double calcVelocityStraight(double k, double target);
 	double calcVelocityTurn(double k, double target);
@@ -52,9 +52,7 @@ private:
 	double stackTurnVelocity = 0;
 
 	typedef struct {
-		double init_x = 0;
-		double init_y = 0;
-		double init_a = 0;
+		double data[2];
 		double stack = 0;
 	} Amount;
 
@@ -89,6 +87,7 @@ void T_Move::update() {
 
 	ros::spinOnce();
 
+	this->updateAmount();
 }
 
 //現在の座標を取得
@@ -115,37 +114,40 @@ double T_Move::getVelocity(string element) {
 	return 1;
 }
 
-/*//距離の取得
-double T_Move::getDistance(double x0, double y0) {
-
-	return hypot(this->getPosition("x") - x0, this->getPosition("y") - y0);
-}
-
-//角度の取得
-double T_Move::getAngle(double a0) {
-
-
-
-	return 0;
-}*/
-
 //移動距離の設定
 void T_Move::resetAmount() {
 
+	//straight
 	this->straight_data.stack = 0;
-	this->straight_data.init_x = this->getPosition("x");
-	this->straight_data.init_y = this->getPosition("y");
+	this->straight_data.data[0] = this->getPosition("x");
+	this->straight_data.data[1] = this->getPosition("y");
+
+	//angle
 	this->turn_data.stack = 0;
-	this->straight_data.init_a = this->getPosition("angle");
+	this->turn_data.data[0] = this->getPosition("angle");
+	this->turn_data.data[1] = this->turn_data.data[0];
 }
 
 void T_Move::updateAmount() {
 
 	//straight_update
-	this->straight_data.stack += hypot((this->getPosition("x") - this->straight_data.init_x), (this->getPosition("y") - this->straight_data.init_y));
+	this->straight_data.stack += hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
 
 	//anglar_update
-	this->turn_data.stack += 9;
+	double a_delta;
+
+	this->turn_data.data[1] = this->turn_data.data[0];
+	this->turn_data.data[0] = this->getPosition("angle");
+
+	a_delta = this->turn_data.data[0] - this->turn_data.data[1];
+
+	printf("update %f %f\n", this->turn_data.data[0], this->turn_data.data[1] );
+	printf("%f\n", a_delta );
+
+	if (a_delta < 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[1] + (360 - this->turn_data.data[0]);
+	if (a_delta > 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[0] + (360 - this->turn_data.data[1]);
+
+	this->turn_data.stack += a_delta;
 }
 
 //移動距離の取得

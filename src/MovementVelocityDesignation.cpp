@@ -68,11 +68,15 @@ int main(int argc, char **argv) {
 
 	ros::Rate loop_rate(8);
 
+	tmove.resetAmount();
+
 	while (ros::ok()) {
 
 		tmove.update();
 
-		tmove.pubTwist(amount.move, tmove.functionStraight(amount.targetV_a, amount.targetV), tmove.functionTurn(amount.targetA_a, amount.targetA));
+		printf("turn %f\n", tmove.getAmount("turn") );
+
+		tmove.pubTwist(amount.move, tmove.calcVelocityStraight(amount.targetV_a, amount.targetV), tmove.calcVelocityTurn(amount.targetA_a, amount.targetA));
 
 		loop_rate.sleep();
 
