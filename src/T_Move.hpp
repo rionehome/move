@@ -40,6 +40,7 @@ public:
 
 	void pubTwist(const ros::Publisher& pub, double v, double a);
 	void pubSignal(const ros::Publisher& pub, int s);
+	void pubVelocity(double v, double v_a, double a, double a_a);
 
 private:
 

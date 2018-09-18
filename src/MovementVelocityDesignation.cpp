@@ -55,6 +55,7 @@ void MovementVelocityDesignation::calc(const std_msgs::Float64MultiArray::ConstP
 	this->targetV_a = msgs->data[1];
 	this->targetA = msgs->data[2];
 	this->targetA_a = msgs->data[3];
+	printf("debug\n");
 
 }
 

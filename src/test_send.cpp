@@ -30,9 +30,9 @@ int main(int argc, char **argv) {
 		d = 2;
 
 		info.data.push_back(a);
+		info.data.push_back(b);
 		info.data.push_back(c);
-		//info.data.push_back(c);
-		//info.data.push_back(d);
+		info.data.push_back(d);
 
 		pub.publish(info);
 
