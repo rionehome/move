@@ -35,12 +35,17 @@ public:
 	double toRadian(double angle) {return (angle * M_PI) / 180;}
 	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
 
-	double functionStraight(double k, double target);
-	double functionTurn(double k, double target);
+	void createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0);
+	double calcStraight(double point);
+	void createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn);
+	double calcTurn(double angular_point);
+
+	double calcVelocityStraight(double k, double target);
+	double calcVelocityTurn(double k, double target);
 
 	void pubTwist(const ros::Publisher& pub, double v, double a);
 	void pubSignal(const ros::Publisher& pub, int s);
-	void pubVelocity(double v, double v_a, double a, double a_a);
+	void pubVelocity(const ros::Publisher& pub, double v, double v_a, double a, double a_a);
 
 private:
 
@@ -59,7 +64,35 @@ private:
 		double angular_speed;
 	} Odometry;
 
+	typedef struct {
+		double x0 = 0;
+		double y0 = 0;
+		double elapsed = 0;
+		double p1 = 0;
+		double p2 = 0;
+		double p3 = 0;
+		double acceleration = 0;
+		double v = 0;
+		double initial_value = 0;
+		double distance = 0;
+	} VelocityProfile;
+
+	typedef struct {
+		double t0 = 0;
+		double elapsed = 0;
+		double p1 = 0;
+		double p2 = 0;
+		double p3 = 0;
+		double acceleration = 0;
+		double v = 0;
+		double initial_value = 0;
+		double deathbed_value = 0;
+		double angle = 0;
+	} AngleProfile;
+
 	Odometry odom_data;
+	VelocityProfile v_data;
+	AngleProfile a_data;
 };
 
 T_Move::T_Move() {
@@ -108,8 +141,108 @@ double T_Move::getAngle(double a0) {
 	return 0;
 }
 
+void T_Move::createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0) {
+
+	this->v_data.v = max_velocity;
+	this->v_data.acceleration = a;
+	this->v_data.initial_value = v0;
+	this->v_data.x0 = x0;
+	this->v_data.y0 = y0;
+	this->v_data.distance = distance;
+	this->v_data.p3 = abs(distance);
+
+	this->v_data.p1 = (this->v_data.v - this->v_data.initial_value) / this->v_data.acceleration;
+	this->v_data.p2 = (this->v_data.acceleration * this->v_data.p3 - this->v_data.v) / this->v_data.acceleration;
+
+	if (this->v_data.p1 + (this->v_data.p3 - this->v_data.p2) > this->v_data.p3) {
+		this->v_data.p1 = this->v_data.p3 / 2;
+		this->v_data.p2 = this->v_data.p3 / 2;
+		printf("short\n");
+	}
+
+	printf("%f   %f   %f\n", v_data.p1, v_data.p2, v_data.p3 );
+
+}
+
+double T_Move::calcStraight(double point) {
+
+	double result = 0.0;
+
+	if (point >= 0 && point < this->v_data.p1) {
+		printf("d1\n");
+		result = this->v_data.acceleration * point + this->v_data.initial_value;
+		printf("%f\n", result);
+		return result;
+	}
+
+	if (point >= this->v_data.p1 && point < this->v_data.p2) {
+		printf("d2\n");
+		return this->v_data.v;
+	}
+
+	if (point >= this->v_data.p2 && point < this->v_data.p3) {
+		result = -1 * this->v_data.acceleration * point + this->v_data.acceleration * this->v_data.p3;
+		printf("d3\n");
+		printf("%f\n", result);
+		return result;
+	}
+
+	printf("d4\n");
+	return 0.1;
+}
+
+void T_Move::createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn) {
+
+	this->a_data.v = max_velocity;
+	this->a_data.acceleration = a;
+	this->a_data.initial_value = v0;
+	this->a_data.deathbed_value = vn;
+	this->a_data.t0 = t0;
+	this->a_data.angle = angle;
+	this->a_data.p3 = abs(angle);
+
+	this->a_data.p1 = (this->a_data.v - this->a_data.initial_value) / this->a_data.acceleration;
+	this->a_data.p2 = ((this->a_data.initial_value + this->a_data.acceleration * this->a_data.p3) - this->a_data.v) / this->a_data.acceleration;
+
+	if (this->a_data.p1 + (this->a_data.p3 - this->a_data.p2) > this->a_data.p3) {
+		this->a_data.p1 = this->a_data.p3 / 2;
+		this->a_data.p2 = this->a_data.p3 / 2;
+		printf("short\n");
+	}
+
+	printf("%f   %f   %f\n", a_data.p1, a_data.p2, a_data.p3 );
+
+}
+
+double T_Move::calcTurn(double angular_point) {
+
+	double result = 0.0;
+
+	if (angular_point >= 0 && angular_point < this->a_data.p1) {
+		printf("a_d1\n");
+		result = this->a_data.acceleration * angular_point + this->a_data.initial_value;
+		printf("%f\n", result);
+		return result;
+	}
+
+	if (angular_point >= this->a_data.p1 && angular_point < this->a_data.p2) {
+		printf("a_d2\n");
+		return this->a_data.v;
+	}
+
+	if (angular_point >= this->a_data.p2 && angular_point < this->a_data.p3) {
+		result = (-1 * this->a_data.acceleration * angular_point) + this->a_data.initial_value + (this->a_data.acceleration * this->a_data.p3);
+		printf("a_d3\n");
+		printf("result %f\n", result);
+		return result;
+	}
+
+	printf("a_d4\n");
+	return 0.45;
+}
+
 //速度のT制御
-double T_Move::functionStraight(double d, double targetV) {
+double T_Move::calcVelocityStraight(double d, double targetV) {
 
 	if (targetV - this->stackStraight > 0) {
 
@@ -131,7 +264,7 @@ double T_Move::functionStraight(double d, double targetV) {
 }
 
 //角度のT制御
-double T_Move::functionTurn(double d, double targetA) {
+double T_Move::calcVelocityTurn(double d, double targetA) {
 
 	if (targetA - this->stackTurn >= 0) {
 
@@ -165,6 +298,22 @@ void T_Move::pubTwist(const ros::Publisher &pub, double v, double a) {
 	twist.angular.z = a;
 
 	pub.publish(twist);
+}
+
+//速度送信
+void T_Move::pubVelocity(const ros::Publisher &pub, double v, double v_a, double a, double a_a) {
+
+	std_msgs::Float64MultiArray info;
+
+	info.data.clear();
+
+	info.data.push_back(v);
+	info.data.push_back(v_a);
+	info.data.push_back(a);
+	info.data.push_back(a_a);
+
+	pub.publish(info);
+
 }
 
 //シグナル送信

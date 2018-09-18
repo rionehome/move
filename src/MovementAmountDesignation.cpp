@@ -66,12 +66,12 @@ private:
 	AngleProfile a_data;
 
 	void callback(const std_msgs::Float64MultiArray::ConstPtr &msg);
-	void callStraight(double distance, double v);
-	void callTurn(double angle, double v);
 	void createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0);
 	double calcStraight(double point);
-	void createAnglar(double t0, double max_velocity, double angle, double a, double v0, double vn);
-	double calcAnglar(double angular_point);
+	void callStraight(double distance, double v);
+	void createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn);
+	double calcTurn(double angular_point);
+	void callTurn(double angle, double v);
 
 
 public:
@@ -104,11 +104,11 @@ void MovementAmountDesignation::callback(const std_msgs::Float64MultiArray::Cons
 
 	if (msg->data[2] == 0) { //linter
 
-		this->straight(msg->data[0], msg->data[1]);
+		this->callStraight(msg->data[0], msg->data[1]);
 
 	} else if (msg->data[0] == 0) { //angle
 
-		this->turn(msg->data[2], msg->data[3]);
+		this->callTurn(msg->data[2], msg->data[3]);
 
 	} else {
 
@@ -118,7 +118,7 @@ void MovementAmountDesignation::callback(const std_msgs::Float64MultiArray::Cons
 
 }
 
-void MovementAmountDesignation::acceleration_create(double x0, double y0, double max_velocity, double distance, double a, double v0) {
+void MovementAmountDesignation::createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0) {
 
 	this->v_data.v = max_velocity;
 	this->v_data.acceleration = a;
@@ -141,7 +141,7 @@ void MovementAmountDesignation::acceleration_create(double x0, double y0, double
 
 }
 
-double MovementAmountDesignation::acceleration_function(double point) {
+double MovementAmountDesignation::calcStraight(double point) {
 
 	double result = 0.0;
 
@@ -169,13 +169,13 @@ double MovementAmountDesignation::acceleration_function(double point) {
 }
 
 
-void MovementAmountDesignation::straight(double distance, double v) {
+void MovementAmountDesignation::callStraight(double distance, double v) {
 
 	if (v_data.p3 == 0) {
 
 		ros::Rate loop_rate(24);
 
-		this->acceleration_create(this->odom_data.x, this->odom_data.y, v, distance, ACCELERATION, 0.08);
+		this->createStraight(this->odom_data.x, this->odom_data.y, v, distance, ACCELERATION, 0.08);
 
 		while (ros::ok()) {
 
@@ -190,26 +190,26 @@ void MovementAmountDesignation::straight(double distance, double v) {
 			printf("%f\n", v_data.elapsed );
 
 			if (distance > 0) {
-				this->publish_twist(this->move, this->acceleration_function(v_data.elapsed), 0);
+				//this->publish_twist(this->move, this->calcStraight(v_data.elapsed), 0);
 			} else {
-				this->publish_twist(this->move, -1 * this->acceleration_function(v_data.elapsed), 0);
+				//this->publish_twist(this->move, -1 * this->calcStraight(v_data.elapsed), 0);
 			}
 
 		}
 
 		v_data.p3 = 0;
-		this->pub_signal(1);
+		t_move.pubSignal(this->signal, 1);
 
 	} else {
 
-		if (this->sign(v_data.distance) == this->sign(distance)) {
+		if (t_move.sign(v_data.distance) == t_move.sign(distance)) {
 
-			this->acceleration_create(this->odom_data.x, this->odom_data.y, v, distance, ACCELERATION, this->acceleration_function(v_data.elapsed));
+			this->createStraight(this->odom_data.x, this->odom_data.y, v, distance, ACCELERATION, this->calcStraight(v_data.elapsed));
 
 		} else {
 
 			printf("***************Error!!*****************\n");
-			this->pub_signal(-1);
+			t_move.pubSignal(this->signal, -1);
 
 		}
 
@@ -217,7 +217,7 @@ void MovementAmountDesignation::straight(double distance, double v) {
 
 }
 
-void MovementAmountDesignation::angular_acceleration_create(double t0, double max_velocity, double angle, double a, double v0, double vn) {
+void MovementAmountDesignation::createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn) {
 
 	this->a_data.v = max_velocity;
 	this->a_data.acceleration = a;
@@ -240,7 +240,7 @@ void MovementAmountDesignation::angular_acceleration_create(double t0, double ma
 
 }
 
-double MovementAmountDesignation::angular_acceleration_function(double angular_point) {
+double MovementAmountDesignation::calcTurn(double angular_point) {
 
 	double result = 0.0;
 
@@ -267,25 +267,28 @@ double MovementAmountDesignation::angular_acceleration_function(double angular_p
 	return 0.45;
 }
 
-void MovementAmountDesignation::turn(double angle, double v) {
+void MovementAmountDesignation::callTurn(double angle, double v) {
 
 	double stack_angle = 0.0;
-	double start_angle = this->angle_to_quaternion(this->odom_data.angular_w, this->odom_data.angular_z);
+	//double start_angle = this->angle_to_quaternion(this->odom_data.angular_w, this->odom_data.angular_z);
+	double start_angle = t_move.toQuaternion_ang(this->odom_data.angular_w, this->odom_data.angular_z);
+	
+
 	double current_angle = 0.0;
 	double before_angle = start_angle;
 	double after_angle = start_angle;
 	double angular_velocity = 0.0;
 
-	this->angular_acceleration_create(start_angle, v, angle, ANGLE_ACCELERATION, 0.5, 0.4);
+	this->createTurn(start_angle, v, angle, ANGLE_ACCELERATION, 0.5, 0.4);
 
 	ros::Rate loop_rate(24);
 
 	while (ros::ok()) {
 
-		this->updata();
+		t_move.update();
 
-		current_angle = this->angle_to_quaternion(this->odom_data.angular_w, this->odom_data.angular_z);
-
+		//current_angle = this->angle_to_quaternion(this->odom_data.angular_w, this->odom_data.angular_z);
+		current_angle = t_move.toQuaternion_ang(this->odom_data.angular_w, this->odom_data.angular_z);
 		after_angle = current_angle;
 
 		if (angle > 0) {
@@ -305,13 +308,13 @@ void MovementAmountDesignation::turn(double angle, double v) {
 		stack_angle += angular_velocity;
 
 		if (stack_angle >= abs(angle)) {
-			publish_twist(this->move, 0, 0);
+			//publish_twist(this->move, 0, 0);
 			break;
 		}
 
 		loop_rate.sleep();
 
-		publish_twist(this->move, 0, this->angular_acceleration_function(stack_angle) * (angle == 0 ? 0 : angle / abs(angle)));
+		//publish_twist(this->move, 0, this->calcTurn(stack_angle) * (angle == 0 ? 0 : angle / abs(angle)));
 
 		printf("%f\n", stack_angle );
 
@@ -319,7 +322,7 @@ void MovementAmountDesignation::turn(double angle, double v) {
 
 	}
 
-	this->pub_signal(1);
+	t_move.pubSignal(this->signal, 1);
 
 }
 
