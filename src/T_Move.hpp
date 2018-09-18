@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#ifndef   C_HPP
-#define   C_HPP
+#ifndef   T_MOVE_HPP
+#define   T_MOVE_HPP
 
 using namespace std;
 
