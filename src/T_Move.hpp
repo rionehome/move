@@ -17,41 +17,12 @@ public:
 	T_Move();
 	~T_Move();
 
-	typedef struct {
-		double x0 = 0;
-		double y0 = 0;
-		double elapsed = 0;
-		double p1 = 0;
-		double p2 = 0;
-		double p3 = 0;
-		double acceleration = 0;
-		double v = 0;
-		double initial_value = 0;
-		double distance = 0;
-	} VelocityProfile;
-
-	typedef struct {
-		double t0 = 0;
-		double elapsed = 0;
-		double p1 = 0;
-		double p2 = 0;
-		double p3 = 0;
-		double acceleration = 0;
-		double v = 0;
-		double initial_value = 0;
-		double deathbed_value = 0;
-		double angle = 0;
-	} AngleProfile;
-
-	VelocityProfile v_data;
-	AngleProfile a_data;
-
-	void update() {ros::spinOnce();}
+	void update();
 
 	double getPosition(string element);
 	double getVelocity(string element);
-	double getDistance(double x0, double y0);
-	double getAngle(double a0);
+	void resetAmount();
+	double getAmount(string element);
 	void setOdometry(const nav_msgs::Odometry::ConstPtr &odom);
 
 	double toQuaternion_ang(double w, double z) {
@@ -66,11 +37,7 @@ public:
 	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
 
 	//Distance
-	void createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0);
-	double calcStraight(double point);
-	void createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn);
-	double calcTurn(double angular_point);
-
+	
 	//Velocity
 	double calcVelocityStraight(double k, double target);
 	double calcVelocityTurn(double k, double target);
@@ -81,8 +48,15 @@ public:
 
 private:
 
-	double stackStraight = 0;
-	double stackTurn = 0;
+	double stackStraightVelocity = 0;
+	double stackTurnVelocity = 0;
+
+	typedef struct {
+		double init_x = 0;
+		double init_y = 0;
+		double init_a = 0;
+		double stack = 0;
+	} Amount;
 
 	typedef struct {
 		double x;
@@ -97,6 +71,10 @@ private:
 	} Odometry;
 
 	Odometry odom_data;
+	Amount straight_data;
+	Amount turn_data;
+
+	void updateAmount();
 };
 
 T_Move::T_Move() {
@@ -105,6 +83,12 @@ T_Move::T_Move() {
 
 T_Move::~T_Move() {
 	printf("Shutdown class of 'T_Move'\n");
+}
+
+void T_Move::update() {
+
+	ros::spinOnce();
+
 }
 
 //現在の座標を取得
@@ -131,7 +115,7 @@ double T_Move::getVelocity(string element) {
 	return 1;
 }
 
-//距離の取得
+/*//距離の取得
 double T_Move::getDistance(double x0, double y0) {
 
 	return hypot(this->getPosition("x") - x0, this->getPosition("y") - y0);
@@ -143,150 +127,79 @@ double T_Move::getAngle(double a0) {
 
 
 	return 0;
+}*/
+
+//移動距離の設定
+void T_Move::resetAmount() {
+
+	this->straight_data.stack = 0;
+	this->straight_data.init_x = this->getPosition("x");
+	this->straight_data.init_y = this->getPosition("y");
+	this->turn_data.stack = 0;
+	this->straight_data.init_a = this->getPosition("angle");
 }
 
-void T_Move::createStraight(double x0, double y0, double max_velocity, double distance, double a, double v0) {
+void T_Move::updateAmount() {
 
-	this->v_data.v = max_velocity;
-	this->v_data.acceleration = a;
-	this->v_data.initial_value = v0;
-	this->v_data.x0 = x0;
-	this->v_data.y0 = y0;
-	this->v_data.distance = distance;
-	this->v_data.p3 = abs(distance);
+	//straight_update
+	this->straight_data.stack += hypot((this->getPosition("x") - this->straight_data.init_x), (this->getPosition("y") - this->straight_data.init_y));
 
-	this->v_data.p1 = (this->v_data.v - this->v_data.initial_value) / this->v_data.acceleration;
-	this->v_data.p2 = (this->v_data.acceleration * this->v_data.p3 - this->v_data.v) / this->v_data.acceleration;
-
-	if (this->v_data.p1 + (this->v_data.p3 - this->v_data.p2) > this->v_data.p3) {
-		this->v_data.p1 = this->v_data.p3 / 2;
-		this->v_data.p2 = this->v_data.p3 / 2;
-		printf("short\n");
-	}
-
-	printf("%f   %f   %f\n", v_data.p1, v_data.p2, v_data.p3 );
-
+	//anglar_update
+	this->turn_data.stack += 9;
 }
 
-double T_Move::calcStraight(double point) {
+//移動距離の取得
+double T_Move::getAmount(string element) {
 
-	double result = 0.0;
+	if (element == "straight") return this->straight_data.stack;
 
-	if (point >= 0 && point < this->v_data.p1) {
-		printf("d1\n");
-		result = this->v_data.acceleration * point + this->v_data.initial_value;
-		printf("%f\n", result);
-		return result;
-	}
+	if (element == "turn") return this->turn_data.stack;
 
-	if (point >= this->v_data.p1 && point < this->v_data.p2) {
-		printf("d2\n");
-		return this->v_data.v;
-	}
-
-	if (point >= this->v_data.p2 && point < this->v_data.p3) {
-		result = -1 * this->v_data.acceleration * point + this->v_data.acceleration * this->v_data.p3;
-		printf("d3\n");
-		printf("%f\n", result);
-		return result;
-	}
-
-	printf("d4\n");
-	return 0.1;
-}
-
-void T_Move::createTurn(double t0, double max_velocity, double angle, double a, double v0, double vn) {
-
-	this->a_data.v = max_velocity;
-	this->a_data.acceleration = a;
-	this->a_data.initial_value = v0;
-	this->a_data.deathbed_value = vn;
-	this->a_data.t0 = t0;
-	this->a_data.angle = angle;
-	this->a_data.p3 = abs(angle);
-
-	this->a_data.p1 = (this->a_data.v - this->a_data.initial_value) / this->a_data.acceleration;
-	this->a_data.p2 = ((this->a_data.initial_value + this->a_data.acceleration * this->a_data.p3) - this->a_data.v) / this->a_data.acceleration;
-
-	if (this->a_data.p1 + (this->a_data.p3 - this->a_data.p2) > this->a_data.p3) {
-		this->a_data.p1 = this->a_data.p3 / 2;
-		this->a_data.p2 = this->a_data.p3 / 2;
-		printf("short\n");
-	}
-
-	printf("%f   %f   %f\n", a_data.p1, a_data.p2, a_data.p3 );
-
-}
-
-double T_Move::calcTurn(double angular_point) {
-
-	double result = 0.0;
-
-	if (angular_point >= 0 && angular_point < this->a_data.p1) {
-		printf("a_d1\n");
-		result = this->a_data.acceleration * angular_point + this->a_data.initial_value;
-		printf("%f\n", result);
-		return result;
-	}
-
-	if (angular_point >= this->a_data.p1 && angular_point < this->a_data.p2) {
-		printf("a_d2\n");
-		return this->a_data.v;
-	}
-
-	if (angular_point >= this->a_data.p2 && angular_point < this->a_data.p3) {
-		result = (-1 * this->a_data.acceleration * angular_point) + this->a_data.initial_value + (this->a_data.acceleration * this->a_data.p3);
-		printf("a_d3\n");
-		printf("result %f\n", result);
-		return result;
-	}
-
-	printf("a_d4\n");
-	return 0.45;
+	return -1;
 }
 
 //速度のT制御
 double T_Move::calcVelocityStraight(double d, double targetV) {
 
-	if (targetV - this->stackStraight > 0) {
+	if (targetV - this->stackStraightVelocity > 0) {
 
-		this->stackStraight += d;
+		this->stackStraightVelocity += d;
 
-		if (this->stackStraight > targetV) this->stackStraight = targetV;
+		if (this->stackStraightVelocity > targetV) this->stackStraightVelocity = targetV;
 
 	} else {
 
-		this->stackStraight -= d;
+		this->stackStraightVelocity -= d;
 
-		if (this->stackStraight < targetV) this->stackStraight = targetV;
+		if (this->stackStraightVelocity < targetV) this->stackStraightVelocity = targetV;
 
 	}
 
-	if (abs(this->stackStraight) < 0.01) this->stackStraight = 0;
+	if (abs(this->stackStraightVelocity) < 0.01) this->stackStraightVelocity = 0;
 
-	return this->stackStraight;
+	return this->stackStraightVelocity;
 }
 
 //角度のT制御
 double T_Move::calcVelocityTurn(double d, double targetA) {
 
-	if (targetA - this->stackTurn >= 0) {
+	if (targetA - this->stackTurnVelocity >= 0) {
 
-		this->stackTurn += d;
+		this->stackTurnVelocity += d;
 
-		if (this->stackTurn > targetA) this->stackTurn = targetA;
+		if (this->stackTurnVelocity > targetA) this->stackTurnVelocity = targetA;
 
 	} else {
 
-		this->stackTurn -= d;
+		this->stackTurnVelocity -= d;
 
-		if (this->stackTurn < targetA) this->stackTurn = targetA;
+		if (this->stackTurnVelocity < targetA) this->stackTurnVelocity = targetA;
 
 	}
 
-	if (abs(this->stackTurn) < 0.01) this->stackTurn = 0;
+	if (abs(this->stackTurnVelocity) < 0.01) this->stackTurnVelocity = 0;
 
-	return this->stackTurn;
+	return this->stackTurnVelocity;
 }
 
 //Twist送信
