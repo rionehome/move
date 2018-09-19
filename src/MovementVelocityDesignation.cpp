@@ -66,6 +66,8 @@ int main(int argc, char **argv) {
 
 	MovementVelocityDesignation amount;
 
+	tmove.init();
+
 	ros::Rate loop_rate(8);
 
 	tmove.resetAmount();

@@ -17,6 +17,8 @@ public:
 	T_Move();
 	~T_Move();
 
+	void init();
+
 	void update();
 
 	double getPosition(string element);
@@ -66,6 +68,7 @@ private:
 		double angular_w;
 		double linear_speed;
 		double angular_speed;
+		bool enable = false;
 	} Odometry;
 
 	Odometry odom_data;
@@ -83,16 +86,22 @@ T_Move::~T_Move() {
 	printf("Shutdown class of 'T_Move'\n");
 }
 
+void T_Move::init() {
+
+	ros::spinOnce();
+	while (!this->odom_data.enable) ros::spinOnce(); //オドメトリ情報取得まで待機
+}
+
 void T_Move::update() {
 
 	ros::spinOnce();
-
 	this->updateAmount();
 }
 
-//現在の座標を取得
+//現在の座標を取得resetAmount
 double T_Move::getPosition(string element) {
 
+	if (element == "enable") return this->odom_data.enable;
 	if (element == "x") return this->odom_data.x;
 	if (element == "y") return this->odom_data.y;
 	if (element == "angle") return this->toQuaternion_ang(this->odom_data.angular_w, this->odom_data.angular_z);
@@ -111,7 +120,7 @@ double T_Move::getVelocity(string element) {
 		return abs(this->odom_data.angular_speed) > 0.01 ? this->odom_data.angular_speed : 0;
 	}
 
-	return 1;
+	return -1;
 }
 
 //移動距離の設定
@@ -119,13 +128,15 @@ void T_Move::resetAmount() {
 
 	//straight
 	this->straight_data.stack = 0;
-	this->straight_data.data[0] = this->getPosition("x");
-	this->straight_data.data[1] = this->getPosition("y");
 
 	//angle
 	this->turn_data.stack = 0;
+
+	this->straight_data.data[0] = this->getPosition("x");
+	this->straight_data.data[1] = this->getPosition("y");
+	this->turn_data.data[1] = this->getPosition("angle");
 	this->turn_data.data[0] = this->getPosition("angle");
-	this->turn_data.data[1] = this->turn_data.data[0];
+
 }
 
 void T_Move::updateAmount() {
@@ -136,18 +147,15 @@ void T_Move::updateAmount() {
 	//anglar_update
 	double a_delta;
 
-	this->turn_data.data[1] = this->turn_data.data[0];
-	this->turn_data.data[0] = this->getPosition("angle");
-
 	a_delta = this->turn_data.data[0] - this->turn_data.data[1];
-
-	printf("update %f %f\n", this->turn_data.data[0], this->turn_data.data[1] );
-	printf("%f\n", a_delta );
 
 	if (a_delta < 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[1] + (360 - this->turn_data.data[0]);
 	if (a_delta > 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[0] + (360 - this->turn_data.data[1]);
 
 	this->turn_data.stack += a_delta;
+
+	this->turn_data.data[1] = this->turn_data.data[0];
+	this->turn_data.data[0] = this->getPosition("angle");
 }
 
 //移動距離の取得
@@ -257,7 +265,7 @@ void T_Move::setOdometry(const nav_msgs::Odometry::ConstPtr &odom) {
 	this->odom_data.angular_w = odom->pose.pose.orientation.w;
 	this->odom_data.linear_speed = odom->twist.twist.linear.x;
 	this->odom_data.angular_speed = odom->twist.twist.angular.z;
-
+	this->odom_data.enable = true;
 }
 
 #endif
