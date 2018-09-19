@@ -145,6 +145,10 @@ void T_Move::updateAmount() {
 
 	//straight_update
 	this->straight_data.stack += hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
+	printf("%f %f\n", (this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
+	//printf("%f\n", hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1])) );
+	//printf("%f\n", this->straight_data.stack );
+	//printf("%f %f\n", this->getPosition("x") , this->straight_data.data[0] );
 
 	//anglar_update
 	double a_delta;
@@ -172,8 +176,10 @@ double T_Move::getAmount(string element) {
 
 double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 
-	if (targetAmount == 0) return 0;
+	//printf("%f %f\n", targetAmount, point);
 
+	if (targetAmount == 0) return 0;
+	printf("p1\n");
 	if (abs(targetAmount) < point) return 0;
 	printf("p2\n");
 	if (abs(targetAmount) / 2 > point) return this->calcVelocityStraight(0.3, this->sign(targetAmount) * max_v); //移動距離の半分まで

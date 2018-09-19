@@ -18,6 +18,7 @@ T_Move t_move;
 class MovementAmountDesignation {
 private:
 	void callback(const std_msgs::Float64MultiArray::ConstPtr &msg);
+	void setOdom(const nav_msgs::Odometry::ConstPtr &odom) {t_move.setOdometry(odom);}
 	void Straight(double distance, double v);
 	void Turn(double angle, double v);
 
@@ -27,6 +28,7 @@ public:
 
 	ros::NodeHandle n;
 	ros::Subscriber amount;
+	ros::Subscriber odom;
 	ros::Publisher velocity;
 	ros::Publisher signal;
 	ros::Publisher move;
@@ -40,7 +42,7 @@ MovementAmountDesignation::MovementAmountDesignation() {
 
 	printf("start class of 'MovementAmountDesignation'\n");
 
-	//this->odom = n.subscribe("/odom", 1000, &MovementAmountDesignation::odometry, this);
+	this->odom = n.subscribe("/odom", 1000, &MovementAmountDesignation::setOdom, this);
 	this->amount = n.subscribe("/move/amount", 1000, &MovementAmountDesignation::callback, this);
 	this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 	this->velocity = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
@@ -88,12 +90,14 @@ int main(int argc, char **argv) {
 
 	MovementAmountDesignation amount_move;
 
+	t_move.init();
+
+	t_move.resetAmount();
+
 	while (ros::ok()) {
 
 		t_move.update();
-
 		t_move.pubTwist(amount_move.move, t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight")) , t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn")));
-
 	}
 
 	return 0;
