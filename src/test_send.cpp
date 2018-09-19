@@ -13,7 +13,8 @@ int main(int argc, char **argv) {
 
 	ros::NodeHandle n;
 
-	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
+	//ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
+	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/amount", 1000);
 
 	std_msgs::Float64MultiArray info;
 
@@ -26,8 +27,9 @@ int main(int argc, char **argv) {
 		printf("turn->");
 		scanf("%lf", &c);
 
-		b = 0.3;
-		d = 2;
+		b = 0.1;
+		c = 0;
+		d = 0;
 
 		info.data.push_back(a);
 		info.data.push_back(b);

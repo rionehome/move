@@ -38,11 +38,13 @@ public:
 	double toRadian(double angle) {return (angle * M_PI) / 180;}
 	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
 
-	//Distance
+	//Amount
+	double exeDistance(double targetAmount, double max_v, double point);
+	double exeAngle(double targetAmount, double max_v, double point);
 
 	//Velocity
-	double calcVelocityStraight(double k, double target);
-	double calcVelocityTurn(double k, double target);
+	double calcVelocityStraight(double d, double target);
+	double calcVelocityTurn(double d, double target);
 
 	void pubTwist(const ros::Publisher& pub, double v, double a);
 	void pubSignal(const ros::Publisher& pub, int s);
@@ -98,7 +100,7 @@ void T_Move::update() {
 	this->updateAmount();
 }
 
-//現在の座標を取得resetAmount
+//現在の座標を取得
 double T_Move::getPosition(string element) {
 
 	if (element == "enable") return this->odom_data.enable;
@@ -136,9 +138,9 @@ void T_Move::resetAmount() {
 	this->straight_data.data[1] = this->getPosition("y");
 	this->turn_data.data[1] = this->getPosition("angle");
 	this->turn_data.data[0] = this->getPosition("angle");
-
 }
 
+//移動距離の更新
 void T_Move::updateAmount() {
 
 	//straight_update
@@ -149,12 +151,9 @@ void T_Move::updateAmount() {
 
 	a_delta = this->turn_data.data[0] - this->turn_data.data[1];
 
-	printf("\ndelta %f\n", a_delta );
-	printf("%f %f\n", this->turn_data.data[0], this->turn_data.data[1]);
-
 	if (a_delta < 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[0] + (360 - this->turn_data.data[1]);
 	if (a_delta > 0 && abs(a_delta) > 180) a_delta = -1 * (this->turn_data.data[1] + (360 - this->turn_data.data[0]));
-	printf("delta %f\n", a_delta );
+
 	this->turn_data.stack += a_delta;
 
 	this->turn_data.data[1] = this->turn_data.data[0];
@@ -169,6 +168,23 @@ double T_Move::getAmount(string element) {
 	if (element == "turn") return this->turn_data.stack;
 
 	return -1;
+}
+
+double T_Move::exeDistance(double targetAmount, double max_v, double point) {
+
+	if (targetAmount == 0) return 0;
+
+	if (abs(targetAmount) < point) return 0;
+	printf("p2\n");
+	if (abs(targetAmount) / 2 > point) return this->calcVelocityStraight(0.3, this->sign(targetAmount) * max_v); //移動距離の半分まで
+	printf("p3\n");
+	return this->calcVelocityStraight((point / targetAmount) / 10, 0);
+}
+
+double T_Move::exeAngle(double targetAmount, double max_v, double point) {
+
+
+	return 0;
 }
 
 //速度のT制御
@@ -243,7 +259,6 @@ void T_Move::pubVelocity(const ros::Publisher &pub, double v, double v_a, double
 	info.data.push_back(a_a);
 
 	pub.publish(info);
-
 }
 
 //シグナル送信

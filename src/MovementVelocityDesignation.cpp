@@ -28,7 +28,6 @@ public:
 
 	void setOdom(const nav_msgs::Odometry::ConstPtr &odom) {tmove.setOdometry(odom);}
 	void calc(const std_msgs::Float64MultiArray::ConstPtr &msgs);
-
 };
 
 MovementVelocityDesignation::MovementVelocityDesignation() {
@@ -39,13 +38,11 @@ MovementVelocityDesignation::MovementVelocityDesignation() {
 	this->amountmove = n.subscribe("/move/velocity", 1000, &MovementVelocityDesignation::calc, this);
 	this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 	this->signal = n.advertise<std_msgs::Int32 >("/move/signal", 1000);
-
 }
 
 MovementVelocityDesignation::~MovementVelocityDesignation() {
 
 	printf("Shutdown class of 'MovementVelocityDesignation'\n");
-
 }
 
 void MovementVelocityDesignation::calc(const std_msgs::Float64MultiArray::ConstPtr &msgs) {
@@ -55,8 +52,6 @@ void MovementVelocityDesignation::calc(const std_msgs::Float64MultiArray::ConstP
 	this->targetV_a = msgs->data[1];
 	this->targetA = msgs->data[2];
 	this->targetA_a = msgs->data[3];
-	printf("debug\n");
-
 }
 
 
@@ -76,14 +71,13 @@ int main(int argc, char **argv) {
 
 		tmove.update();
 
-		//printf("turn %f\n", tmove.getAmount("turn") );
+		printf("turn %f\n", tmove.getAmount("turn") );
 
 		tmove.pubTwist(amount.move, tmove.calcVelocityStraight(amount.targetV_a, amount.targetV), tmove.calcVelocityTurn(amount.targetA_a, amount.targetA));
 
 		loop_rate.sleep();
 
 	}
-
 
 	return 0;
 }
