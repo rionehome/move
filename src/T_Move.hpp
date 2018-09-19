@@ -149,9 +149,12 @@ void T_Move::updateAmount() {
 
 	a_delta = this->turn_data.data[0] - this->turn_data.data[1];
 
-	if (a_delta < 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[1] + (360 - this->turn_data.data[0]);
-	if (a_delta > 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[0] + (360 - this->turn_data.data[1]);
+	printf("\ndelta %f\n", a_delta );
+	printf("%f %f\n", this->turn_data.data[0], this->turn_data.data[1]);
 
+	if (a_delta < 0 && abs(a_delta) > 180) a_delta = this->turn_data.data[0] + (360 - this->turn_data.data[1]);
+	if (a_delta > 0 && abs(a_delta) > 180) a_delta = -1 * (this->turn_data.data[1] + (360 - this->turn_data.data[0]));
+	printf("delta %f\n", a_delta );
 	this->turn_data.stack += a_delta;
 
 	this->turn_data.data[1] = this->turn_data.data[0];

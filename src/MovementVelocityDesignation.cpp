@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
 		tmove.update();
 
-		printf("turn %f\n", tmove.getAmount("turn") );
+		//printf("turn %f\n", tmove.getAmount("turn") );
 
 		tmove.pubTwist(amount.move, tmove.calcVelocityStraight(amount.targetV_a, amount.targetV), tmove.calcVelocityTurn(amount.targetA_a, amount.targetA));
 
