@@ -10,6 +10,9 @@
 #ifndef   T_MOVE_HPP
 #define   T_MOVE_HPP
 
+#define ACCELERATION 0.03
+#define ANGLE_ACCELERATION 0.01
+
 using namespace std;
 
 class T_Move {
@@ -147,10 +150,6 @@ void T_Move::updateAmount() {
 
 	//straight_update
 	this->straight_data.stack = hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
-	//printf("%f %f\n", (this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
-	//printf("%f\n", hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1])) );
-	//printf("%f\n", this->straight_data.stack );
-	//printf("%f %f\n", this->getPosition("x") , this->straight_data.data[0] );
 
 	//anglar_update
 	double a_delta;
@@ -187,25 +186,33 @@ double T_Move::sectionDeceleration(double a, double max_v, double targetAmount) 
 
 double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 
-	printf("%f\n", point );
-
-	if (targetAmount == 0 || abs(targetAmount) < point) return this->calcVelocityStraight(0.3, 0);
+	if (targetAmount == 0 || abs(targetAmount) < point) return this->calcVelocityStraight(ACCELERATION, 0);
 
 	double section, k;
 
-	section = this->sectionDeceleration(0.3, max_v, targetAmount);
+	section = this->sectionDeceleration(ACCELERATION, max_v, targetAmount);
 
-	if (abs(targetAmount) - section > point) return this->calcVelocityStraight(0.3, this->sign(targetAmount) * max_v); //移動距離の半分まで
+	if (abs(targetAmount) - section > point) return this->calcVelocityStraight(ACCELERATION, this->sign(targetAmount) * max_v);
 
 	k = 1 - ((point - (abs(targetAmount) - section)) / section);
 
-	return this->calcVelocityStraight(0.3, this->sign(targetAmount) * (max_v * k + 0.04));
+	return this->calcVelocityStraight(ACCELERATION, this->sign(targetAmount) * (max_v * k + 0.04));
 }
 
 double T_Move::exeAngle(double targetAmount, double max_v, double point) {
 
+	if (targetAmount == 0 || abs(targetAmount) < abs(point)) return this->calcVelocityTurn(ANGLE_ACCELERATION, 0);
+	printf("point %f\n", point );
+	printf("p2\n");
+	double section, k;
 
-	return 0;
+	section = this->sectionDeceleration(ANGLE_ACCELERATION, max_v, targetAmount);
+
+	if (abs(targetAmount) - section > abs(point)) return this->calcVelocityTurn(ANGLE_ACCELERATION, this->sign(targetAmount) * max_v);
+	printf("p3\n");
+	k = 1 - ((abs(point) - (abs(targetAmount) - section)) / section);
+
+	return this->calcVelocityTurn(ANGLE_ACCELERATION, this->sign(targetAmount) * (max_v * k + 0.01));
 }
 
 //速度のT制御
