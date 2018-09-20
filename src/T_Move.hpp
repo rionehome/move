@@ -38,6 +38,8 @@ public:
 	double toRadian(double angle) {return (angle * M_PI) / 180;}
 	double sign(double A) {return  A == 0 ? 0 : A / abs(A);}
 
+	double sectionDeceleration(double a, double max_v, double targetAmount);
+
 	//Amount
 	double exeDistance(double targetAmount, double max_v, double point);
 	double exeAngle(double targetAmount, double max_v, double point);
@@ -144,7 +146,7 @@ void T_Move::resetAmount() {
 void T_Move::updateAmount() {
 
 	//straight_update
-	this->straight_data.stack += hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
+	this->straight_data.stack = hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
 	printf("%f %f\n", (this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1]));
 	//printf("%f\n", hypot((this->getPosition("x") - this->straight_data.data[0]), (this->getPosition("y") - this->straight_data.data[1])) );
 	//printf("%f\n", this->straight_data.stack );
@@ -174,17 +176,26 @@ double T_Move::getAmount(string element) {
 	return -1;
 }
 
+double T_Move::sectionDeceleration(double a, double max_v, double targetAmount) {
+
+	double temp;
+
+	temp = max_v / a;
+
+	return targetAmount / 2 > temp ? temp : targetAmount / 2;
+}
+
 double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 
 	//printf("%f %f\n", targetAmount, point);
 
-	if (targetAmount == 0) return 0;
+	if (targetAmount == 0) return this->calcVelocityStraight(0.3, 0);
 	printf("p1\n");
-	if (abs(targetAmount) < point) return 0;
+	if (abs(targetAmount) < point) return this->calcVelocityStraight(0.3, 0);
 	printf("p2\n");
 	if (abs(targetAmount) / 2 > point) return this->calcVelocityStraight(0.3, this->sign(targetAmount) * max_v); //移動距離の半分まで
 	printf("p3\n");
-	return this->calcVelocityStraight((point / targetAmount) / 10, 0);
+	return this->calcVelocityStraight(0.3, max_v * ((abs(targetAmount) / 2) / (abs(targetAmount) - point)));
 }
 
 double T_Move::exeAngle(double targetAmount, double max_v, double point) {
