@@ -52,6 +52,7 @@ void MovementVelocityDesignation::calc(const std_msgs::Float64MultiArray::ConstP
 	this->targetV_a = msgs->data[1];
 	this->targetA = msgs->data[2];
 	this->targetA_a = msgs->data[3];
+
 }
 
 
@@ -70,8 +71,6 @@ int main(int argc, char **argv) {
 	while (ros::ok()) {
 
 		tmove.update();
-
-		printf("turn %f\n", tmove.getAmount("turn") );
 
 		tmove.pubTwist(amount.move, tmove.calcVelocityStraight(amount.targetV_a, amount.targetV), tmove.calcVelocityTurn(amount.targetA_a, amount.targetA));
 

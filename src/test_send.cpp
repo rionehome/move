@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 		printf("turn->");
 		scanf("%lf", &c);
 
-		b = 0.3;
+		b = 0.5;
 		d = 2;
 
 		info.data.push_back(a);

@@ -209,6 +209,8 @@ add_executable(MovementAmountDesignation_old3 src/MovementAmountDesignation_old3
 target_link_libraries(MovementAmountDesignation_old3  ${catkin_LIBRARIES})
 add_executable(MovementVelocityDesignation_old src/MovementVelocityDesignation_old.cpp)
 target_link_libraries(MovementVelocityDesignation_old  ${catkin_LIBRARIES})
+add_executable(MovementVelocityDesignation src/MovementVelocityDesignation.cpp)
+target_link_libraries(MovementVelocityDesignation  ${catkin_LIBRARIES})
 add_executable(MovementPoint src/MovementPoint.cpp)
 target_link_libraries(MovementPoint  ${catkin_LIBRARIES})
 add_executable(test_move src/test_move.cpp)

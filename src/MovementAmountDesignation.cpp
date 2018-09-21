@@ -8,9 +8,6 @@
 #include <math.h>
 #include "T_Move.hpp"
 
-#define ACCELERATION 2
-#define ANGLE_ACCELERATION 0.015
-
 using namespace std;
 
 T_Move t_move;
@@ -94,10 +91,15 @@ int main(int argc, char **argv) {
 
 	t_move.resetAmount();
 
+	ros::Rate loop_rate(8);
+
 	while (ros::ok()) {
 
 		t_move.update();
 		t_move.pubTwist(amount_move.move, t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight")) , t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn")));
+
+		loop_rate.sleep();
+
 	}
 
 	return 0;
