@@ -66,18 +66,17 @@ void MovementAmountDesignation::callback(const std_msgs::Float64MultiArray::Cons
 	call_angle[0] = msg->data[2];
 	call_angle[1] = msg->data[3];
 
+	printf("move\n");
+
 	t_move.resetAmount();
 
 }
 
 void MovementAmountDesignation::Straight(double distance, double v) {
 
-
-
 }
 
 void MovementAmountDesignation::Turn(double angle, double v) {
-
 
 }
 
@@ -97,7 +96,7 @@ int main(int argc, char **argv) {
 
 		t_move.update();
 		t_move.pubTwist(amount_move.move, t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight")) , t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn")));
-
+		t_move.pubSignal(amount_move.signal, t_move.getMoving("straight") || t_move.getMoving("turn") ? 1 : 0);
 		loop_rate.sleep();
 
 	}

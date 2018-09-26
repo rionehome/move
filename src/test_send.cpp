@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 		scanf("%lf", &c);
 
 		b = 0.5;
-		d = 2;
+		d = 1;
 
 		info.data.push_back(a);
 		info.data.push_back(b);

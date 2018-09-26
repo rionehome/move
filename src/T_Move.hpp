@@ -28,6 +28,9 @@ public:
 	double getVelocity(string element);
 	void resetAmount();
 	double getAmount(string element);
+
+	void setMoving(bool flag, string element);
+	bool getMoving(string element);
 	void setOdometry(const nav_msgs::Odometry::ConstPtr &odom);
 
 	double toQuaternion_ang(double w, double z) {
@@ -59,6 +62,8 @@ private:
 
 	double stackStraightVelocity = 0;
 	double stackTurnVelocity = 0;
+	bool moving_turn = false;
+	bool moving_straight = false;
 
 	typedef struct {
 		double data[2];
@@ -103,6 +108,22 @@ void T_Move::update() {
 
 	ros::spinOnce();
 	this->updateAmount();
+}
+
+void T_Move::setMoving(bool flag, string element) {
+
+	if (element == "straight") this->moving_straight = flag;
+
+	if (element == "turn")this->moving_turn = flag;
+}
+
+bool T_Move::getMoving(string element) {
+
+	if (element == "straight") return this->moving_straight;
+
+	if (element == "turn") return this->moving_turn;
+
+	return false;
 }
 
 //現在の座標を取得
@@ -186,9 +207,14 @@ double T_Move::sectionDeceleration(double a, double max_v, double targetAmount) 
 
 double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 	//printf("exeDistance point %f\n", point );
-	if (targetAmount == 0 || abs(targetAmount) < point) return this->calcVelocityStraight(ACCELERATION, 0);
+	if (targetAmount == 0 || abs(targetAmount) < point) {
+		this->setMoving(false, "straight");
+		return this->calcVelocityStraight(ACCELERATION, 0);
+	}
 
 	double section, k;
+
+	this->setMoving(true, "straight");
 
 	section = this->sectionDeceleration(0.5, max_v, targetAmount);
 	printf("%f\n", section);
@@ -196,18 +222,23 @@ double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 
 	k = 1 - ((point - (abs(targetAmount) - section)) / section);
 
-	return this->calcVelocityStraight(0.5, this->sign(targetAmount) * (max_v * k + 0.04));
+	return this->calcVelocityStraight(0.5, this->sign(targetAmount) * (max_v * k + 0.08));
 }
 
 double T_Move::exeAngle(double targetAmount, double max_v, double point) {
 
-	if (targetAmount == 0 || abs(targetAmount) < abs(point)) return this->calcVelocityTurn(ANGLE_ACCELERATION, 0);
+	if (targetAmount == 0 || abs(targetAmount) < abs(point)) {
+		this->setMoving(false, "turn");
+		return this->calcVelocityTurn(ANGLE_ACCELERATION, 0);
+	}
+
 	//printf("point %f\n", point );
 	//printf("p2\n");
 	double section, k;
+	this->setMoving(true, "turn");
 
 	section = this->sectionDeceleration(0.02, max_v, targetAmount);
-	printf("targetAmount %f\n", targetAmount );
+
 	if (abs(targetAmount) - section > abs(point)) return this->calcVelocityTurn(ANGLE_ACCELERATION, this->sign(targetAmount) * max_v);
 	//printf("p3\n");
 	k = 1 - ((abs(point) - (abs(targetAmount) - section)) / section);
