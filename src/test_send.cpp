@@ -14,7 +14,8 @@ int main(int argc, char **argv) {
 	ros::NodeHandle n;
 
 	//ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
-	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/amount", 1000);
+	//ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/amount", 1000);
+	ros::Publisher pub = n.advertise<std_msgs::Float64MultiArray>("/move/point", 1000);
 
 	std_msgs::Float64MultiArray info;
 
@@ -25,15 +26,15 @@ int main(int argc, char **argv) {
 		printf("distance->");
 		scanf("%lf", &a);
 		printf("turn->");
-		scanf("%lf", &c);
+		scanf("%lf", &b);
 
-		b = 0.5;
-		d = 1;
+		//b = 0.5;
+		//d = 1;
 
 		info.data.push_back(a);
 		info.data.push_back(b);
-		info.data.push_back(c);
-		info.data.push_back(d);
+		//info.data.push_back(c);
+		//info.data.push_back(d);
 
 		pub.publish(info);
 

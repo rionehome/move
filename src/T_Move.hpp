@@ -209,6 +209,7 @@ double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 	//printf("exeDistance point %f\n", point );
 	if (targetAmount == 0 || abs(targetAmount) < point) {
 		this->setMoving(false, "straight");
+		printf("stop distance\n");
 		return this->calcVelocityStraight(ACCELERATION, 0);
 	}
 
@@ -229,6 +230,7 @@ double T_Move::exeAngle(double targetAmount, double max_v, double point) {
 
 	if (targetAmount == 0 || abs(targetAmount) < abs(point)) {
 		this->setMoving(false, "turn");
+		printf("stop turn\n");
 		return this->calcVelocityTurn(ANGLE_ACCELERATION, 0);
 	}
 

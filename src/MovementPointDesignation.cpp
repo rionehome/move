@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class MovementPoint {
+class MovementPointDesignation {
 private:
 	ros::NodeHandle n;
 	ros::Subscriber odom;
@@ -39,10 +39,11 @@ private:
 	}
 
 public:
-	MovementPoint();
-	~MovementPoint();
+	MovementPointDesignation();
+	~MovementPointDesignation();
 
 	void calc(const std_msgs::Float64MultiArray::ConstPtr &msg);
+	double calcAngle_point(double x, double y);
 	void updata() {ros::spinOnce();}
 	double angle_to_quaternion(double w, double z) {
 		return abs((z > 0 ? 1 : 360) - this->angle_to_rad(acos(w) * 2));
@@ -51,23 +52,23 @@ public:
 
 };
 
-MovementPoint::MovementPoint() {
+MovementPointDesignation::MovementPointDesignation() {
 
-	printf("start class of 'MovementPoint'\n");
+	printf("start class of 'MovementPointDesignation'\n");
 
-	this->odom = n.subscribe("/odom", 1000, &MovementPoint::odometry, this);
-	this->point = n.subscribe("/move/point", 1000, &MovementPoint::callback, this);
-	this->move_signal = n.subscribe("/move/signal", 1000, &MovementPoint::signal, this);
+	this->odom = n.subscribe("/odom", 1000, &MovementPointDesignation::odometry, this);
+	this->point = n.subscribe("/move/point", 1000, &MovementPointDesignation::callback, this);
+	this->move_signal = n.subscribe("/move/signal", 1000, &MovementPointDesignation::signal, this);
 	this->amount = n.advertise<std_msgs::Float64MultiArray>("/move/amount", 1000);
 
 }
 
-MovementPoint::~MovementPoint() {
+MovementPointDesignation::~MovementPointDesignation() {
 
-	printf("shutdown class of 'MovementPoint'\n");
+	printf("shutdown class of 'MovementPointDesignation'\n");
 }
 
-void MovementPoint::pub_msg(double distance, double angle) {
+void MovementPointDesignation::pub_msg(double distance, double angle) {
 
 	std_msgs::Float64MultiArray msg;
 
@@ -81,7 +82,32 @@ void MovementPoint::pub_msg(double distance, double angle) {
 
 }
 
-void MovementPoint::odometry(const nav_msgs::Odometry::ConstPtr &odom) {
+double MovementPointDesignation::calcAngle_point(double x, double y) {
+
+	double result;
+
+	if (x == 0) {
+
+		if (y < 0) {
+			return 270.0;
+		} else if (y > 0) {
+			return 90.0;
+		} else {
+			return 0.0;
+		}
+
+	}
+
+	result = atan(y / x);
+
+	if (x < 0) result = M_PI + result;
+
+	if (result < 0) result = 2 * M_PI + result;
+
+	return angle_to_rad(result);
+}
+
+void MovementPointDesignation::odometry(const nav_msgs::Odometry::ConstPtr &odom) {
 
 	this->odom_data.x = odom->pose.pose.position.x;
 	this->odom_data.y = odom->pose.pose.position.y;
@@ -93,44 +119,41 @@ void MovementPoint::odometry(const nav_msgs::Odometry::ConstPtr &odom) {
 
 }
 
-void MovementPoint::callback(const std_msgs::Float64MultiArray::ConstPtr &msg) {
+void MovementPointDesignation::callback(const std_msgs::Float64MultiArray::ConstPtr &msg) {
 
 	this->calc(msg);
 
 }
 
-void MovementPoint::calc(const std_msgs::Float64MultiArray::ConstPtr &msg) {
+void MovementPointDesignation::calc(const std_msgs::Float64MultiArray::ConstPtr &msg) {
 
 	//[0]:x  [1]:y
 	double x0 = this->odom_data.x;
 	double y0 = this->odom_data.y;
 	double bot_angle = this->angle_to_quaternion(this->odom_data.angular_w, this->odom_data.angular_z);
-	double angle = 0;
 	double result;
+	double course_angle;
 
 	if (x0 == msg->data[0] && y0 == msg->data[1]) {
 		return;
 	}
 
-	//角度取得
-	if (y0 == msg->data[1]) {
+	course_angle = this->calcAngle_point(msg->data[0] - x0, msg->data[1] - y0);
 
-		angle = 90;
+	result = course_angle - bot_angle;
 
-	} else {
+	if (abs(result) > 180) result = (360 - abs(result)) * (result > 0 ? -1 : 1);
 
-		angle = angle_to_rad(atan2(y0 - msg->data[1], x0 - msg->data[0]));
-
-	}
-
-	result = 180 - (180 - angle) + (180 - bot_angle);
+	printf("%f\n", result);
 
 	this->pub_msg(0, result);
 
+	this->signal_flag = 1;
+
 	while (ros::ok()) {
 		this->updata();
-		if (this->signal_flag == 1) {
-			this->signal_flag = 0;
+		if (this->signal_flag == 0) {
+			//this->signal_flag = 1;
 			break;
 		} else if (this->signal_flag == -1) {
 			printf("################Error############3\n");
@@ -140,10 +163,12 @@ void MovementPoint::calc(const std_msgs::Float64MultiArray::ConstPtr &msg) {
 
 	this->pub_msg(hypot(x0 - msg->data[0], y0 - msg->data[1]), 0);
 
+	this->signal_flag = 1;
+
 	while (ros::ok()) {
 		this->updata();
-		if (this->signal_flag == 1) {
-			this->signal_flag = 0;
+		if (this->signal_flag == 0) {
+			//this->signal_flag = 1;
 			break;
 		} else if (this->signal_flag == -1) {
 			printf("################Error############3\n");
@@ -155,9 +180,9 @@ void MovementPoint::calc(const std_msgs::Float64MultiArray::ConstPtr &msg) {
 
 int main(int argc, char **argv) {
 
-	ros::init(argc, argv, "MovementPoint");
+	ros::init(argc, argv, "MovementPointDesignation");
 
-	MovementPoint move;
+	MovementPointDesignation move;
 
 	ros::spin();
 
