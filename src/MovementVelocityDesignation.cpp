@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "T_Move.hpp"
+#include <kobuki_msgs/WheelDropEvent.h>
 
 T_Move tmove;
 
@@ -19,15 +20,21 @@ public:
 	double targetA = 0;
 	double targetV_a = 0;
 	double targetA_a = 0;
+	bool status = true;
 
 	ros::NodeHandle n;
 	ros::Subscriber odom;
 	ros::Subscriber amountmove;
+	ros::Subscriber wheel_drop;
 	ros::Publisher move;
 	ros::Publisher signal;
 
 	void setOdom(const nav_msgs::Odometry::ConstPtr &odom) {tmove.setOdometry(odom);}
 	void calc(const std_msgs::Float64MultiArray::ConstPtr &msgs);
+	void wheel_drop_callback(const kobuki_msgs::WheelDropEvent::ConstPtr &msgs) {
+		printf("%d\n", (int)msgs->state );
+		status = (int)msgs->state == 1 ? false : true;
+	}
 };
 
 MovementVelocityDesignation::MovementVelocityDesignation() {
@@ -38,6 +45,7 @@ MovementVelocityDesignation::MovementVelocityDesignation() {
 	this->amountmove = n.subscribe("/move/velocity", 1000, &MovementVelocityDesignation::calc, this);
 	this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 	this->signal = n.advertise<std_msgs::Int32 >("/move/signal", 1000);
+	this->wheel_drop = n.subscribe("/mobile_base/events/wheel_drop", 1000, &MovementVelocityDesignation::wheel_drop_callback, this);
 }
 
 MovementVelocityDesignation::~MovementVelocityDesignation() {
@@ -59,7 +67,7 @@ int main(int argc, char **argv) {
 
 	ros::init(argc, argv, "MovementVelocity");
 
-	MovementVelocityDesignation amount;
+	MovementVelocityDesignation velocity;
 
 	tmove.init();
 
@@ -67,15 +75,13 @@ int main(int argc, char **argv) {
 
 	tmove.resetAmount();
 
-	while (ros::ok()) {
+	while (ros::ok() && velocity.status) {
 
 		tmove.update();
 
-		tmove.pubTwist(amount.move, tmove.calcVelocityStraight(amount.targetV_a, amount.targetV), tmove.calcVelocityTurn(amount.targetA_a, amount.targetA));
+		tmove.pubTwist(velocity.move, tmove.calcVelocityStraight(velocity.targetV_a, velocity.targetV), tmove.calcVelocityTurn(velocity.targetA_a, velocity.targetA));
 
 		loop_rate.sleep();
-
 	}
-
 	return 0;
 }
