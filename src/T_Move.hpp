@@ -10,7 +10,7 @@
 #ifndef   T_MOVE_HPP
 #define   T_MOVE_HPP
 
-#define ACCELERATION 0.03
+#define ACCELERATION 0.045
 #define ANGLE_ACCELERATION 0.2
 
 using namespace std;
@@ -217,13 +217,22 @@ double T_Move::exeDistance(double targetAmount, double max_v, double point) {
 
 	this->setMoving(true, "straight");
 
-	section = this->sectionDeceleration(0.5, max_v, targetAmount);
-	printf("%f\n", section);
+	section = this->sectionDeceleration(0.1, max_v, targetAmount);
+	//printf("%f\n", section);
+	//定速制御
 	if (abs(targetAmount) - section > point) return this->calcVelocityStraight(ACCELERATION, this->sign(targetAmount) * max_v);
-
+	//加速＆減速制御
 	k = 1 - ((point - (abs(targetAmount) - section)) / section);
 
-	return this->calcVelocityStraight(0.5, this->sign(targetAmount) * (max_v * k + 0.08));
+	printf("%f\n", this->sign(targetAmount) * (max_v * k + 0.08) );
+	double variable_v = this->calcVelocityStraight(0.1, this->sign(targetAmount) * (max_v * k + 0.08));
+	double constant_v = this->calcVelocityStraight(ACCELERATION, this->sign(targetAmount) * max_v);
+
+	if (variable_v > constant_v) {
+		return constant_v;
+	} else {
+		return variable_v;
+	}
 }
 
 double T_Move::exeAngle(double targetAmount, double max_v, double point) {

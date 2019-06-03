@@ -26,14 +26,14 @@ int main(int argc, char **argv) {
 		printf("distance->");
 		scanf("%lf", &a);
 		printf("turn->");
-		scanf("%lf", &b);
+		scanf("%lf", &c);
 
-		//b = 0.5;
-		//d = 1;
+		b = 0.5;
+		d = 1;
 
 		info.data.push_back(a);
-		info.data.push_back(b);
-		//info.data.push_back(c);
+		//info.data.push_back(b);
+		info.data.push_back(c);
 		//info.data.push_back(d);
 
 		pub.publish(info);
