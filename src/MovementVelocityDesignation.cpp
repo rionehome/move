@@ -24,7 +24,6 @@ public:
 	ros::Subscriber odom;
 	ros::Subscriber amountmove;
 	ros::Publisher move;
-	ros::Publisher signal;
 
 	void setOdom(const nav_msgs::Odometry::ConstPtr &odom) {tmove.setOdometry(odom);}
 	void calc(const std_msgs::Float64MultiArray::ConstPtr &msgs);
@@ -37,7 +36,6 @@ MovementVelocityDesignation::MovementVelocityDesignation() {
 	this->odom = n.subscribe("/odom", 1000, &MovementVelocityDesignation::setOdom, this);
 	this->amountmove = n.subscribe("/move/velocity", 1000, &MovementVelocityDesignation::calc, this);
 	this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
-	this->signal = n.advertise<std_msgs::Int32 >("/move/signal", 1000);
 }
 
 MovementVelocityDesignation::~MovementVelocityDesignation() {

@@ -43,7 +43,7 @@ MovementAmountDesignation::MovementAmountDesignation() {
 	this->amount = n.subscribe("/move/amount", 1000, &MovementAmountDesignation::callback, this);
 	//this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 	this->velocity = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
-	this->signal = n.advertise<std_msgs::Int32 >("/move/signal", 1000);
+	this->signal = n.advertise<std_msgs::Int32 >("/move/amount/signal", 1000);
 
 	call_liner[0] = 0;
 	call_liner[1] = 0;
