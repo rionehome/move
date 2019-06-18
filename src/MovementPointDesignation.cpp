@@ -78,7 +78,7 @@ void MovementPointDesignation::pub_msg(double distance, double angle) {
 	msg.data.push_back(distance);
 	msg.data.push_back(0.3);
 	msg.data.push_back(angle);
-	msg.data.push_back(1.5);
+	msg.data.push_back(0.75);
 
 	amount.publish(msg);
 

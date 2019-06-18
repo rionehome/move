@@ -274,6 +274,9 @@ double T_Move::calcVelocityStraight(double d, double targetV) {
 
 	}
 
+	if (this->stackStraightVelocity > 0 && d == 0) this->stackStraightVelocity -= 0.01;
+	if (this->stackStraightVelocity < 0 && d == 0) this->stackStraightVelocity += 0.01;
+
 	if (abs(this->stackStraightVelocity) < 0.01) this->stackStraightVelocity = 0;
 
 	return this->stackStraightVelocity;
@@ -296,13 +299,18 @@ double T_Move::calcVelocityTurn(double d, double targetA) {
 
 	}
 
-	if (abs(this->stackTurnVelocity) < 0.01) this->stackTurnVelocity = 0;
+	if (this->stackTurnVelocity > 0 && d == 0) this->stackTurnVelocity -= 0.01;
+	if (this->stackTurnVelocity < 0 && d == 0) this->stackTurnVelocity += 0.01;
+
+	if (abs(this->stackTurnVelocity) < 0.015) this->stackTurnVelocity = 0;
 
 	return this->stackTurnVelocity;
 }
 
 //Twist送信
 void T_Move::pubTwist(const ros::Publisher &pub, double v, double a) {
+
+	if (v == 0 && a == 0) return;
 
 	geometry_msgs::Twist twist;
 
@@ -318,6 +326,8 @@ void T_Move::pubTwist(const ros::Publisher &pub, double v, double a) {
 
 //速度送信
 void T_Move::pubVelocity(const ros::Publisher &pub, double v, double v_a, double a, double a_a) {
+
+	if (v == 0 && a == 0) return;
 
 	std_msgs::Float64MultiArray info;
 
