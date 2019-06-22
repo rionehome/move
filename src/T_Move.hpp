@@ -327,7 +327,7 @@ void T_Move::pubTwist(const ros::Publisher &pub, double v, double a) {
 //速度送信
 void T_Move::pubVelocity(const ros::Publisher &pub, double v, double v_a, double a, double a_a) {
 
-	if (v == 0 && a == 0) return;
+	//if (v == 0 && a == 0) return;
 
 	std_msgs::Float64MultiArray info;
 

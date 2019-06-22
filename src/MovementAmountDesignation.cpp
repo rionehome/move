@@ -27,11 +27,14 @@ public:
 	ros::Subscriber amount;
 	ros::Subscriber odom;
 	ros::Publisher velocity;
-	ros::Publisher signal;
+	ros::Publisher pub_signal;
 	//ros::Publisher move;
 
 	double call_liner[2];
 	double call_angle[2];
+	bool move_signal = false;
+	bool move_status = false;
+	bool core_status = false;
 
 };
 
@@ -43,7 +46,7 @@ MovementAmountDesignation::MovementAmountDesignation() {
 	this->amount = n.subscribe("/move/amount", 1000, &MovementAmountDesignation::callback, this);
 	//this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 	this->velocity = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
-	this->signal = n.advertise<std_msgs::Int32 >("/move/amount/signal", 1000);
+	this->pub_signal = n.advertise<std_msgs::Int32 >("/move/amount/signal", 1000);
 
 	call_liner[0] = 0;
 	call_liner[1] = 0;
@@ -69,7 +72,7 @@ void MovementAmountDesignation::callback(const std_msgs::Float64MultiArray::Cons
 	printf("move\n");
 
 	t_move.resetAmount();
-
+	move_status = true;
 }
 
 void MovementAmountDesignation::Straight(double distance, double v) {
@@ -98,14 +101,23 @@ int main(int argc, char **argv) {
 	while (ros::ok()) {
 
 		t_move.update();
-		//t_move.pubTwist(amount_move.move, t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight")) , t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn")));
-		v = t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight"));
-		a = t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn"));
-		printf("%f\n", v );
-		t_move.pubVelocity(amount_move.velocity, v, 0.2, a, 1);
-		t_move.pubSignal(amount_move.signal, t_move.getMoving("straight") || t_move.getMoving("turn") ? 1 : 0);
-		loop_rate.sleep();
 
+		amount_move.move_signal = t_move.getMoving("straight") || t_move.getMoving("turn");
+		t_move.pubSignal(amount_move.pub_signal, amount_move.move_signal);
+
+		if (amount_move.move_status) {
+			v = t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight"));
+			a = t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn"));
+			t_move.pubVelocity(amount_move.velocity, v, 0.2, a, 1);
+			if (amount_move.move_signal) amount_move.core_status = true;
+			if (amount_move.core_status && !amount_move.move_signal) {
+				amount_move.move_status = false;
+				printf("finish\n");
+			}
+		} else {
+			t_move.pubVelocity(amount_move.velocity, 0, 0, 0, 0);
+		}
+		loop_rate.sleep();
 	}
 
 	return 0;
