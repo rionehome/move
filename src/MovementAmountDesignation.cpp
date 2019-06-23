@@ -28,7 +28,7 @@ public:
 	ros::Subscriber odom;
 	ros::Publisher velocity;
 	ros::Publisher pub_signal;
-	//ros::Publisher move;
+	ros::Publisher twist;
 
 	double call_liner[2];
 	double call_angle[2];
@@ -44,7 +44,7 @@ MovementAmountDesignation::MovementAmountDesignation() {
 
 	this->odom = n.subscribe("/odom", 1000, &MovementAmountDesignation::setOdom, this);
 	this->amount = n.subscribe("/move/amount", 1000, &MovementAmountDesignation::callback, this);
-	//this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
+	this->twist = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 	this->velocity = n.advertise<std_msgs::Float64MultiArray>("/move/velocity", 1000);
 	this->pub_signal = n.advertise<std_msgs::Int32 >("/move/amount/signal", 1000);
 
@@ -112,10 +112,12 @@ int main(int argc, char **argv) {
 			if (amount_move.move_signal) amount_move.core_status = true;
 			if (amount_move.core_status && !amount_move.move_signal) {
 				amount_move.move_status = false;
+				amount_move.core_status = false;
+				t_move.pubTwist(amount_move.twist, 0, 0);
 				printf("finish\n");
 			}
 		} else {
-			t_move.pubVelocity(amount_move.velocity, 0, 0, 0, 0);
+			//t_move.pubVelocity(amount_move.velocity, 0, 0, 0, 0);
 		}
 		loop_rate.sleep();
 	}
