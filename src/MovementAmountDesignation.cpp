@@ -103,17 +103,20 @@ int main(int argc, char **argv) {
 		t_move.update();
 
 		amount_move.move_signal = t_move.getMoving("straight") || t_move.getMoving("turn");
-		t_move.pubSignal(amount_move.pub_signal, amount_move.move_signal);
 
 		if (amount_move.move_status) {
 			v = t_move.exeDistance(amount_move.call_liner[0], amount_move.call_liner[1], t_move.getAmount("straight"));
 			a = t_move.exeAngle(amount_move.call_angle[0], amount_move.call_angle[1], t_move.getAmount("turn"));
 			t_move.pubVelocity(amount_move.velocity, v, 0.2, a, 1);
-			if (amount_move.move_signal) amount_move.core_status = true;
+			if (amount_move.move_signal) {
+				amount_move.core_status = true;
+				t_move.pubSignal(amount_move.pub_signal, 1);
+			}
 			if (amount_move.core_status && !amount_move.move_signal) {
 				amount_move.move_status = false;
 				amount_move.core_status = false;
 				t_move.pubTwist(amount_move.twist, 0, 0);
+				t_move.pubSignal(amount_move.pub_signal, 0);
 				printf("finish\n");
 			}
 		} else {
