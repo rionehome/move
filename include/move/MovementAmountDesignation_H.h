@@ -37,8 +37,8 @@ public:
     ros::Publisher pub_signal;
     ros::Publisher twist;
 
-    double call_liner[2];
-    double call_angle[2];
+    double call_liner[2]{};
+    double call_angle[2]{};
     bool move_signal = false;
     bool move_status = false;
     bool core_status = false;

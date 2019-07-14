@@ -1,12 +1,3 @@
-#include "ros/ros.h"
-#include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
-#include <std_msgs/Float64MultiArray.h>
-#include <std_msgs/Int32.h>
-#include <time.h>
-#include <stdio.h>
-#include <math.h>
-#include "T_Move.hpp"
 #include "../include/move/MovementAmountDesignation_H.h"
 
 using namespace std;

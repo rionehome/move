@@ -1,14 +1,4 @@
-#include "ros/ros.h"
 #include "../include/move/MovementPointDesignation_H.h"
-#include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
-#include <std_msgs/Float64MultiArray.h>
-#include <std_msgs/Int32.h>
-#include <time.h>
-#include <stdio.h>
-#include <math.h>
-
-using namespace std;
 
 MovementPointDesignation::MovementPointDesignation()
 {
@@ -105,7 +95,7 @@ void MovementPointDesignation::calc(const std_msgs::Float64MultiArray::ConstPtr 
     printf("bot_angle %f\n", bot_angle);
     result = course_angle - bot_angle;
 
-    if (abs(result) > 180) result = (360 - abs(result)) * (result > 0 ? -1 : 1);
+    if (std::abs(result) > 180) result = (360 - std::abs(result)) * (result > 0 ? -1 : 1);
 
     printf("%f\n", result);
 

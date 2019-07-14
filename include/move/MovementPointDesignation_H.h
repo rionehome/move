@@ -37,7 +37,7 @@ private:
         double angular_w;
     } Odometry;
 
-    Odometry odom_data;
+    Odometry odom_data{};
 
     void odometry(const nav_msgs::Odometry::ConstPtr &msgs);
     void callback(const std_msgs::Float64MultiArray::ConstPtr &msg);
