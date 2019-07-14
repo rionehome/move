@@ -7,43 +7,18 @@
 #include <stdio.h>
 #include <math.h>
 #include "T_Move.hpp"
-
-T_Move tmove;
-
-class MovementVelocityDesignation
-{
-public:
-    MovementVelocityDesignation();
-    ~MovementVelocityDesignation();
-
-    double targetV = 0;
-    double targetA = 0;
-    double targetV_a = 0;
-    double targetA_a = 0;
-
-    ros::NodeHandle n;
-    ros::Subscriber odom;
-    ros::Subscriber amountmove;
-    ros::Publisher move;
-
-    void setOdom(const nav_msgs::Odometry::ConstPtr &odom)
-    { tmove.setOdometry(odom); }
-    void calc(const std_msgs::Float64MultiArray::ConstPtr &msgs);
-};
+#include "../include/move/MovementVelocityDesignation_H.h"
 
 MovementVelocityDesignation::MovementVelocityDesignation()
 {
-
     printf("Start class of 'MovementVelocityDesignation'\n");
-
     this->odom = n.subscribe("/odom", 1000, &MovementVelocityDesignation::setOdom, this);
-    this->amountmove = n.subscribe("/move/velocity", 1000, &MovementVelocityDesignation::calc, this);
+    this->amount_move = n.subscribe("/move/velocity", 1000, &MovementVelocityDesignation::calc, this);
     this->move = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 }
 
 MovementVelocityDesignation::~MovementVelocityDesignation()
 {
-
     printf("Shutdown class of 'MovementVelocityDesignation'\n");
 }
 
@@ -59,28 +34,17 @@ void MovementVelocityDesignation::calc(const std_msgs::Float64MultiArray::ConstP
 
 int main(int argc, char **argv)
 {
-
     ros::init(argc, argv, "MovementVelocity");
-
     MovementVelocityDesignation amount;
-
-    tmove.init();
-
+    t_move.init();
     ros::Rate loop_rate(8);
-
-    tmove.resetAmount();
-
+    t_move.resetAmount();
     while (ros::ok()) {
-
-        tmove.update();
-
-        tmove.pubTwist(amount.move,
-                       tmove.calcVelocityStraight(amount.targetV_a, amount.targetV),
-                       tmove.calcVelocityTurn(amount.targetA_a, amount.targetA));
-
+        t_move.update();
+        t_move.pubTwist(amount.move,
+                        t_move.calcVelocityStraight(amount.targetV_a, amount.targetV),
+                        t_move.calcVelocityTurn(amount.targetA_a, amount.targetA));
         loop_rate.sleep();
-
     }
-
     return 0;
 }

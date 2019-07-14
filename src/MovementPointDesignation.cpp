@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+#include "../include/move/MovementPointDesignation_H.h"
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float64MultiArray.h>
@@ -8,58 +9,6 @@
 #include <math.h>
 
 using namespace std;
-
-class MovementPointDesignation
-{
-private:
-    ros::NodeHandle n;
-    ros::Subscriber odom;
-    ros::Subscriber point;
-    ros::Subscriber move_signal;
-    ros::Publisher amount;
-    ros::Publisher point_signal;
-
-    int amount_signal_flag = 0;
-    int point_signal_flag = 0;
-
-    typedef struct
-    {
-        double x;
-        double y;
-        double z;
-        double angular_x;
-        double angular_y;
-        double angular_z;
-        double angular_w;
-    } Odometry;
-
-    Odometry odom_data;
-
-    void odometry(const nav_msgs::Odometry::ConstPtr &odom);
-    void callback(const std_msgs::Float64MultiArray::ConstPtr &msg);
-    void pub_msg(double distance, double angle);
-    void signal(const std_msgs::Int32::ConstPtr &msg)
-    {
-        amount_signal_flag = msg->data;
-    }
-
-public:
-    MovementPointDesignation();
-    ~MovementPointDesignation();
-
-    void calc(const std_msgs::Float64MultiArray::ConstPtr &msg);
-    double calcAngle_point(double x, double y);
-    void pubSignal(const ros::Publisher &pub, int s);
-    void updata()
-    { ros::spinOnce(); }
-    double angle_to_quaternion(double w, double z)
-    {
-        return abs((z > 0 ? 1 : 360) - this->angle_to_rad(acos(w) * 2));
-    }
-    double angle_to_rad(double rad)
-    { return rad * 180 / M_PI; }
-
-};
 
 MovementPointDesignation::MovementPointDesignation()
 {
@@ -79,27 +28,20 @@ MovementPointDesignation::~MovementPointDesignation()
 
 void MovementPointDesignation::pub_msg(double distance, double angle)
 {
-
     std_msgs::Float64MultiArray msg;
-
     msg.data.clear();
     msg.data.push_back(distance);
     msg.data.push_back(0.3);
     msg.data.push_back(angle);
     msg.data.push_back(0.75);
-
     amount.publish(msg);
-
 }
 
 //シグナル送信
 void MovementPointDesignation::pubSignal(const ros::Publisher &pub, int s)
 {
-
     std_msgs::Int32 signal;
-
     signal.data = s;
-
     pub.publish(signal);
 }
 
@@ -125,15 +67,15 @@ double MovementPointDesignation::calcAngle_point(double x, double y)
     return angle_to_rad(result);
 }
 
-void MovementPointDesignation::odometry(const nav_msgs::Odometry::ConstPtr &odom)
+void MovementPointDesignation::odometry(const nav_msgs::Odometry::ConstPtr &msgs)
 {
-    this->odom_data.x = odom->pose.pose.position.x;
-    this->odom_data.y = odom->pose.pose.position.y;
-    this->odom_data.z = odom->pose.pose.position.z;
-    this->odom_data.angular_x = odom->pose.pose.orientation.x;
-    this->odom_data.angular_y = odom->pose.pose.orientation.y;
-    this->odom_data.angular_z = odom->pose.pose.orientation.z;
-    this->odom_data.angular_w = odom->pose.pose.orientation.w;
+    this->odom_data.x = msgs->pose.pose.position.x;
+    this->odom_data.y = msgs->pose.pose.position.y;
+    this->odom_data.z = msgs->pose.pose.position.z;
+    this->odom_data.angular_x = msgs->pose.pose.orientation.x;
+    this->odom_data.angular_y = msgs->pose.pose.orientation.y;
+    this->odom_data.angular_z = msgs->pose.pose.orientation.z;
+    this->odom_data.angular_w = msgs->pose.pose.orientation.w;
 }
 
 void MovementPointDesignation::callback(const std_msgs::Float64MultiArray::ConstPtr &msg)
@@ -143,7 +85,6 @@ void MovementPointDesignation::callback(const std_msgs::Float64MultiArray::Const
 
 void MovementPointDesignation::calc(const std_msgs::Float64MultiArray::ConstPtr &msg)
 {
-
     //[0]:x  [1]:y
     double x0 = this->odom_data.x;
     double y0 = this->odom_data.y;
@@ -210,12 +151,8 @@ void MovementPointDesignation::calc(const std_msgs::Float64MultiArray::ConstPtr 
 
 int main(int argc, char **argv)
 {
-
     ros::init(argc, argv, "MovementPointDesignation");
-
     MovementPointDesignation move;
-
     ros::spin();
-
     return 0;
 }
