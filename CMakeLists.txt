@@ -8,9 +8,9 @@ project(move)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-)
+        roscpp
+        std_msgs
+        )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -102,10 +102,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES move
-#  CATKIN_DEPENDS roscpp std_msgs
-#  DEPENDS system_lib
+        #  INCLUDE_DIRS include
+        #  LIBRARIES move
+        #  CATKIN_DEPENDS roscpp std_msgs
+        #  DEPENDS system_lib
 )
 
 ###########
@@ -115,8 +115,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
+        # include
+        ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -200,16 +200,16 @@ include_directories(
 
 add_definitions(-std=c++11)
 add_executable(test_move src/test_move.cpp)
-target_link_libraries(test_move  ${catkin_LIBRARIES})
+target_link_libraries(test_move ${catkin_LIBRARIES})
 add_executable(target_move src/target_move.cpp)
-target_link_libraries(target_move  ${catkin_LIBRARIES})
-add_executable(amount_move src/amount_move.cpp)
-target_link_libraries(amount_move  ${catkin_LIBRARIES})
-add_executable(MovementPointDesignation src/MovementPointDesignation.cpp)
-target_link_libraries(MovementPointDesignation  ${catkin_LIBRARIES})
-add_executable(MovementVelocityDesignation src/MovementVelocityDesignation.cpp)
-target_link_libraries(MovementVelocityDesignation  ${catkin_LIBRARIES})
+target_link_libraries(target_move ${catkin_LIBRARIES})
+add_executable(MovementPointDesignation src/MovementPointDesignation.cpp include/move/MovementPointDesignation_H.h)
+target_link_libraries(MovementPointDesignation ${catkin_LIBRARIES})
+add_executable(MovementVelocityDesignation src/MovementVelocityDesignation.cpp include/move/MovementVelocityDesignation_H.h)
+target_link_libraries(MovementVelocityDesignation ${catkin_LIBRARIES})
+add_executable(MovementAmountDesignation src/MovementAmountDesignation.cpp include/move/MovementAmountDesignation_H.h)
+target_link_libraries(MovementAmountDesignation ${catkin_LIBRARIES})
 add_executable(test_send src/test_send.cpp)
-target_link_libraries(test_send  ${catkin_LIBRARIES})
-add_executable(MovementAmountDesignation src/MovementAmountDesignation.cpp)
-target_link_libraries(MovementAmountDesignation  ${catkin_LIBRARIES})
+target_link_libraries(test_send ${catkin_LIBRARIES})
+#add_executable(amount_move src/amount_move.cpp)
+#target_link_libraries(amount_move  ${catkin_LIBRARIES})
