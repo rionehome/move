@@ -7,20 +7,21 @@ using namespace std;
 
 ros::Publisher move_pub;
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
-	ros::init(argc, argv, "target_move");
+    ros::init(argc, argv, "target_move");
 
-	ros::NodeHandle n;
+    ros::NodeHandle n;
 
-	//std_msgs::Int32MultiArray pub_array;
+    //std_msgs::Int32MultiArray pub_array;
 
-	//ros::Subscriber sub = n.subscribe("target_move", 1000, move_info);
+    //ros::Subscriber sub = n.subscribe("target_move", 1000, move_info);
 
-	move_pub = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
+    move_pub = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 
-	ros::spin();
+    ros::spin();
 
-	return 0;
+    return 0;
 
 }

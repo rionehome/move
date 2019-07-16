@@ -7,130 +7,141 @@
 #include <time.h>
 
 
-typedef struct {
+typedef struct
+{
 
-	double x;
-	double y;
-	double z;
-	double angular_x;
-	double angular_y;
-	double angular_z;
-	double angular_w;
+    double x;
+    double y;
+    double z;
+    double angular_x;
+    double angular_y;
+    double angular_z;
+    double angular_w;
 
 } Odometry;
 
 using namespace std;
 
 ros::Publisher pub;
+
 Odometry odominfo;
 
 double goal = 0;
+
 double distance_info = 0.0;
+
 bool flag = false;
+
 double input_info;
 
-void publish_msgs(const ros::Publisher& pub, double x, double az) {
+void publish_msgs(const ros::Publisher &pub, double x, double az)
+{
 
-	geometry_msgs::Twist twist;
+    geometry_msgs::Twist twist;
 
-	twist.linear.x = x;
-	twist.angular.z = az;
+    twist.linear.x = x;
+    twist.angular.z = az;
 
-	pub.publish(twist);
-
-}
-
-void calc_move(const nav_msgs::Odometry::ConstPtr& odom) {
-
-	//if (flag == true) {
-
-	double x = odom->pose.pose.position.x;
-
-	//printf("%f\n", x );
-
-	if (distance_info == 0) {
-		goal = x + input_info;
-	}
-
-	distance_info =  goal - x;
-
-	printf("%f\n", distance_info);
-
-	if (distance_info > 0 && flag) {
-
-		publish_msgs(pub, 0.1, 0);
-
-	} else if (distance_info <= 0 && flag) {
-
-		flag = false;
-		distance_info = 0;
-
-	}
+    pub.publish(twist);
 
 }
 
-void odometry(const nav_msgs::Odometry::ConstPtr& odom) {
+void calc_move(const nav_msgs::Odometry::ConstPtr &odom)
+{
 
-	//printf("%f\n", odom->pose.pose.position.x );
+    //if (flag == true) {
 
-	//printf("%f\n", odom->pose.pose.position.x);
-	/*
-		odominfo.x = odom->pose.pose.position.x;
-		odominfo.y = odom->pose.pose.position.y;
-		odominfo.z = odom->pose.pose.position.z;
-		odominfo.angular_x = odom->pose.pose.orientation.x;
-		odominfo.angular_y = odom->pose.pose.orientation.y;
-		odominfo.angular_z = odom->pose.pose.orientation.z;
-		odominfo.angular_w = odom->pose.pose.orientation.w;
+    double x = odom->pose.pose.position.x;
 
-		x = odom->pose.pose.position.x;
-	*/
-	calc_move(odom);
+    //printf("%f\n", x );
+
+    if (distance_info == 0) {
+        goal = x + input_info;
+    }
+
+    distance_info = goal - x;
+
+    printf("%f\n", distance_info);
+
+    if (distance_info > 0 && flag) {
+
+        publish_msgs(pub, 0.1, 0);
+
+    }
+    else if (distance_info <= 0 && flag) {
+
+        flag = false;
+        distance_info = 0;
+
+    }
 
 }
 
-void test_move(const std_msgs::Float64::ConstPtr& input) {
+void odometry(const nav_msgs::Odometry::ConstPtr &odom)
+{
 
-	flag = true;
-	input_info = input->data;
+    //printf("%f\n", odom->pose.pose.position.x );
+
+    //printf("%f\n", odom->pose.pose.position.x);
+    /*
+        odominfo.x = odom->pose.pose.position.x;
+        odominfo.y = odom->pose.pose.position.y;
+        odominfo.z = odom->pose.pose.position.z;
+        odominfo.angular_x = odom->pose.pose.orientation.x;
+        odominfo.angular_y = odom->pose.pose.orientation.y;
+        odominfo.angular_z = odom->pose.pose.orientation.z;
+        odominfo.angular_w = odom->pose.pose.orientation.w;
+
+        x = odom->pose.pose.position.x;
+    */
+    calc_move(odom);
 
 }
 
-int main(int argc, char **argv) {
+void test_move(const std_msgs::Float64::ConstPtr &input)
+{
 
-	geometry_msgs::Twist twist;
+    flag = true;
+    input_info = input->data;
 
-	ros::init(argc, argv, "test_move");
+}
 
-	double start = clock();
-	double step = 0;
+int main(int argc, char **argv)
+{
 
-	ros::NodeHandle n;
-	int deb;
+    geometry_msgs::Twist twist;
 
-	//ros::Subscriber sub = n.subscribe("/odom", 1000, odometry);
-	//ros::Subscriber move = n.subscribe("/test_move", 1000, test_move);
+    ros::init(argc, argv, "test_move");
 
-	pub = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
+    double start = clock();
+    double step = 0;
 
-	scanf("%d", &deb);
+    ros::NodeHandle n;
+    int deb;
 
-	while (1) {
+    //ros::Subscriber sub = n.subscribe("/odom", 1000, odometry);
+    //ros::Subscriber move = n.subscribe("/test_move", 1000, test_move);
 
-		step = clock();
+    pub = n.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 
-		printf("%f\n", step - start );
+    scanf("%d", &deb);
 
-		if ((step - start) / CLOCKS_PER_SEC > 1) break;
+    while (1) {
 
-		twist.angular.z = 1;
-		pub.publish(twist);
+        step = clock();
 
-	}
+        printf("%f\n", step - start);
 
-	twist.angular.z = 0;
-	pub.publish(twist);
+        if ((step - start) / CLOCKS_PER_SEC > 1) break;
 
-	return 0;
+        twist.angular.z = 1;
+        pub.publish(twist);
+
+    }
+
+    twist.angular.z = 0;
+    pub.publish(twist);
+
+    return 0;
 
 }
