@@ -65,7 +65,7 @@ int main(int argc, char **argv)
             }
         }
         else {
-            //t_move.pubVelocity(amount_move.velocity, 0, 0, 0, 0);
+            //t_move.pubVelocity(amount_move.Velocity, 0, 0, 0, 0);
         }
         loop_rate.sleep();
     }
