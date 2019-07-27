@@ -7,8 +7,8 @@
 #include <nav_msgs/Odometry.h>
 #include "../include/move/velocity.h"
 
-#define MAX_LINEAR 0.7
-#define MAX_ANGULAR 110
+#define MAX_LINEAR 0.7 // m/s
+#define MAX_ANGULAR 1.9 // rad
 
 Velocity::Velocity(ros::NodeHandle *n)
 {
@@ -41,18 +41,29 @@ void Velocity::callbackVelocity(const move::Velocity::ConstPtr &msg)
      * linear:0.7m/sが最大.
      * angular:110deg/sが最大.
      */
-    this->last_linear_acceleration = msg->linear_acceleration_rate * MAX_LINEAR;
-    this->last_linear = msg->linear_rate * MAX_LINEAR;
-    this->last_angular_acceleration = msg->angular_acceleration_rate * MAX_ANGULAR;
-    this->last_angular = msg->angular_rate * MAX_ANGULAR;
+    if (std::abs(msg->linear_acceleration_rate) <= 1.0)
+        this->last_linear_acceleration = msg->linear_acceleration_rate * MAX_LINEAR;
+    if (std::abs(msg->linear_rate) <= 1.0)
+        this->last_linear = msg->linear_rate * MAX_LINEAR;
+    if (std::abs(msg->angular_acceleration_rate) <= 1.0)
+        this->last_angular_acceleration = msg->angular_acceleration_rate * MAX_ANGULAR;
+    if (std::abs(msg->angular_rate) <= 1.0)
+        this->last_angular = msg->angular_rate * MAX_ANGULAR;
 }
 
 void Velocity::velocity_update()
 {
-    /*
-     * linear:0.7m/sが最大.
-     * angular:110deg/sが最大.
-     */
+    //速度更新
+    this->stack_linear += this->last_linear_acceleration;
+    this->stack_angular += this->last_angular_acceleration;
+
+    //制限設定
+    if (std::abs(this->stack_linear) > std::abs(this->last_linear)) this->stack_linear = this->last_linear;
+    if (std::abs(this->stack_angular) > std::abs(this->last_angular)) this->stack_angular = this->last_angular;
+
+    //停止
+    if (this->last_linear_acceleration == 0.0 && this->last_linear == 0.0) this->stack_linear = 0.0;
+    if (this->last_angular_acceleration == 0.0 && this->last_angular == 0.0) this->stack_angular = 0.0;
 
     this->publishTwist(this->stack_linear, this->stack_angular);
 }
