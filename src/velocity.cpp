@@ -54,25 +54,27 @@ void Velocity::callbackVelocity(const move::Velocity::ConstPtr &msg)
 void Velocity::velocity_update()
 {
     //速度更新
-    this->stack_linear += this->last_linear_acceleration;
-    this->stack_angular += this->last_angular_acceleration;
+    this->stack_linear += this->last_linear_acceleration * (std::signbit(this->last_linear) ? -1 : 1);
+    this->stack_angular += this->last_angular_acceleration * (std::signbit(this->last_angular) ? -1 : 1);
 
     //制限設定
-    if (std::abs(this->stack_linear) > std::abs(this->last_linear)) this->stack_linear = this->last_linear;
-    if (std::abs(this->stack_angular) > std::abs(this->last_angular)) this->stack_angular = this->last_angular;
+    if (std::abs(this->stack_linear) >= std::abs(this->last_linear)) this->stack_linear = this->last_linear;
+    if (std::abs(this->stack_angular) >= std::abs(this->last_angular)) this->stack_angular = this->last_angular;
 
     //停止
     if (this->last_linear_acceleration == 0.0 && this->last_linear == 0.0) this->stack_linear = 0.0;
     if (this->last_angular_acceleration == 0.0 && this->last_angular == 0.0) this->stack_angular = 0.0;
 
-    this->publishTwist(this->stack_linear, this->stack_angular);
+    if (!(this->stack_linear == 0.0 && this->stack_angular == 0.0))
+        this->publishTwist(this->stack_linear, this->stack_angular);
+
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "Velocity");
-    ros::Rate loop_rate(10);
+    ros::init(argc, argv, "velocity");
     ros::NodeHandle n;
+    ros::Rate loop_rate(10);
     Velocity velocity = Velocity(&n);
     while (ros::ok()) {
         ros::spinOnce();
