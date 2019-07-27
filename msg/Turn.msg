@@ -1,2 +1,0 @@
-float64 acceleration
-float64 velocity
