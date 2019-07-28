@@ -27,13 +27,13 @@ Velocity::~Velocity()
 void Velocity::publishTwist(double liner_x, double angular_z)
 {
     geometry_msgs::Twist twist = geometry_msgs::Twist();
-    if (std::abs(liner_x) > MAX_LINEAR) liner_x = MAX_LINEAR * (std::signbit(liner_x) ? -1 : 1);
+    //if (std::abs(liner_x) > MAX_LINEAR) liner_x = MAX_LINEAR * (std::signbit(liner_x) ? -1 : 1);
     twist.linear.x = liner_x;
     twist.linear.y = 0.0;
     twist.linear.z = 0.0;
     twist.angular.x = 0.0;
     twist.angular.y = 0.0;
-    //if (std::abs(angular_z) > MAX_ANGULAR) angular_z = MAX_ANGULAR * (std::signbit(angular_z) ? -1 : 1);
+    if (std::abs(angular_z) > MAX_ANGULAR) angular_z = MAX_ANGULAR * (std::signbit(angular_z) ? -1 : 1);
     twist.angular.z = angular_z;
     this->twist_pub.publish(twist);
 }
@@ -45,7 +45,7 @@ double Velocity::linearPidControl(double Kp, double Ki, double Kd)
      */
     double p, i, d;
     this->diff_linear[0] = this->diff_linear[1];
-    this->diff_linear[1] = target_angular - sensor_angular;
+    this->diff_linear[1] = target_linear - sensor_linear;
     this->integral_linear += (this->diff_linear[1] + this->diff_linear[0]) / 2.0 * (1.0 / Hz);
     p = Kp * this->diff_linear[1];
     i = Ki * this->integral_linear;
@@ -66,16 +66,13 @@ double Velocity::angularPidControl(double Kp, double Ki, double Kd)
     p = Kp * this->diff_angular[1];
     i = Ki * this->integral_angular;
     d = Kd * (this->diff_angular[1] - this->diff_angular[0]) / (1.0 / Hz);
-    std::cout << p + i + d << '\n';
     return p + i + d;
 }
 
 void Velocity::velocity_update()
 {
-    double output_linear, output_angular;
-
     this->stack_angular += this->angularPidControl(0.24, 0.01, 0.005);
-    output_linear = 0;
+    this->stack_linear += this->linearPidControl(3, 0, 0);
 
     //停止
     //if (this->target_linear == 0.0) output_linear = 0.0;
@@ -83,7 +80,7 @@ void Velocity::velocity_update()
         this->stack_angular = 0.0;
     }
 
-    this->publishTwist(output_linear, this->stack_angular);
+    this->publishTwist(this->stack_linear, this->stack_angular);
 }
 
 int main(int argc, char **argv)

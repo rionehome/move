@@ -17,6 +17,7 @@ private:
     ros::Subscriber velocity_sub;
     ros::Subscriber odometry_sub;
     ros::Publisher twist_pub;
+    double stack_linear = 0.0;
     double stack_angular = 0.0;
     double sensor_linear = 0.0;
     double sensor_angular = 0.0;
