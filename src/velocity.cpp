@@ -38,12 +38,20 @@ void Velocity::publishTwist(double liner_x, double angular_z)
     this->twist_pub.publish(twist);
 }
 
-void Velocity::linearPidControl(double Kp, double Ki, double Kd)
+double Velocity::linearPidControl(double Kp, double Ki, double Kd)
 {
     /*
      * Linear PID制御
      */
-
+    double p, i, d;
+    this->diff_linear[0] = this->diff_linear[1];
+    this->diff_linear[1] = target_angular - sensor_angular;
+    this->integral_linear += (this->diff_linear[1] + this->diff_linear[0]) / 2.0 * (1.0 / Hz);
+    p = Kp * this->diff_linear[1];
+    i = Ki * this->integral_linear;
+    d = Kd * (this->diff_linear[1] - this->diff_linear[0]) / (1.0 / Hz);
+    std::cout << p + i + d << '\n';
+    return p + i + d;
 }
 
 double Velocity::angularPidControl(double Kp, double Ki, double Kd)
@@ -66,12 +74,14 @@ void Velocity::velocity_update()
 {
     double output_linear, output_angular;
 
-    this->stack_angular += this->angularPidControl(0.3, 0, 0);
+    this->stack_angular += this->angularPidControl(0.24, 0.01, 0.005);
     output_linear = 0;
 
     //停止
-    //if (this->input_linear == 0.0) output_linear = 0.0;
-    //if (this->target_angular == 0.0) output_angular = 0.0;
+    //if (this->target_linear == 0.0) output_linear = 0.0;
+    if (this->stack_angular != 0.0 && std::abs(this->stack_angular) < 0.01) {
+        this->stack_angular = 0.0;
+    }
 
     this->publishTwist(output_linear, this->stack_angular);
 }
@@ -82,11 +92,9 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     ros::Rate loop_rate(Hz);
     Velocity velocity = Velocity(&n);
-    ros::WallTime before;
     while (ros::ok()) {
         ros::spinOnce();
         velocity.velocity_update();
-        before = ros::WallTime::now();
         loop_rate.sleep();
     }
     return 0;

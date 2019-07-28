@@ -20,7 +20,7 @@ private:
     double stack_angular = 0.0;
     double sensor_linear = 0.0;
     double sensor_angular = 0.0;
-    double input_linear = 0.0;
+    double target_linear = 0.0;
     double target_angular = 0.0;
     double integral_linear = 0.0;
     double integral_angular = 0.0;
@@ -35,7 +35,7 @@ private:
          * angular:110deg/sが最大.
          */
         if (std::abs(msg->linear_rate) <= 1.0)
-            this->input_linear = msg->linear_rate * MAX_LINEAR;
+            this->target_linear = msg->linear_rate * MAX_LINEAR;
         if (std::abs(msg->angular_rate) <= 1.0)
             this->target_angular = msg->angular_rate * MAX_ANGULAR;
     }
@@ -49,7 +49,7 @@ private:
         this->sensor_angular = msg->twist.twist.angular.z;
     }
     void publishTwist(double liner_x, double angular_z);
-    void linearPidControl(double Kp, double Ki, double Kd);
+    double linearPidControl(double Kp, double Ki, double Kd);
     double angularPidControl(double Kp, double Ki, double Kd);
 };
 
