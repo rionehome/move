@@ -1,4 +1,2 @@
-float64 linear_acceleration_rate
 float64 linear_rate
-float64 angular_acceleration_rate
 float64 angular_rate

@@ -9,6 +9,7 @@
 
 #define MAX_LINEAR 0.7 // m/s
 #define MAX_ANGULAR 1.9 // rad
+#define Hz 100
 
 Velocity::Velocity(ros::NodeHandle *n)
 {
@@ -41,25 +42,35 @@ void Velocity::callbackVelocity(const move::Velocity::ConstPtr &msg)
      * linear:0.7m/sが最大.
      * angular:110deg/sが最大.
      */
-    if (std::abs(msg->linear_acceleration_rate) <= 1.0)
-        this->last_linear_acceleration = msg->linear_acceleration_rate * MAX_LINEAR;
     if (std::abs(msg->linear_rate) <= 1.0)
         this->last_linear = msg->linear_rate * MAX_LINEAR;
-    if (std::abs(msg->angular_acceleration_rate) <= 1.0)
-        this->last_angular_acceleration = msg->angular_acceleration_rate * MAX_ANGULAR;
     if (std::abs(msg->angular_rate) <= 1.0)
         this->last_angular = msg->angular_rate * MAX_ANGULAR;
 }
 
 void Velocity::velocity_update()
 {
-    //速度更新
-    this->stack_linear += this->last_linear_acceleration * (std::signbit(this->last_linear) ? -1 : 1);
-    this->stack_angular += this->last_angular_acceleration * (std::signbit(this->last_angular) ? -1 : 1);
+    if (this->stack_linear != this->last_linear) {
+        this->stack_linear +=
+            this->last_linear_acceleration * (std::signbit(this->last_linear - this->stack_linear) ? -1 : 1);
 
-    //制限設定
-    if (std::abs(this->stack_linear) >= std::abs(this->last_linear)) this->stack_linear = this->last_linear;
-    if (std::abs(this->stack_angular) >= std::abs(this->last_angular)) this->stack_angular = this->last_angular;
+    }
+    if (std::abs(this->stack_linear) >= std::abs(this->last_linear)) {
+        //制限設定
+        this->stack_linear = this->last_linear;
+    }
+    else {
+        //速度更新
+        this->stack_linear += this->last_linear_acceleration * (std::signbit(this->last_linear) ? -1 : 1);
+    }
+    if (std::abs(this->stack_angular) >= std::abs(this->last_angular)) {
+        //制限設定
+        this->stack_angular = this->last_angular;
+    }
+    else {
+        //速度更新
+        this->stack_angular += this->last_angular_acceleration * (std::signbit(this->last_angular) ? -1 : 1);
+    }
 
     //停止
     if (this->last_linear_acceleration == 0.0 && this->last_linear == 0.0) this->stack_linear = 0.0;
@@ -74,12 +85,16 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "velocity");
     ros::NodeHandle n;
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(Hz);
     Velocity velocity = Velocity(&n);
+    ros::WallTime before;
     while (ros::ok()) {
         ros::spinOnce();
         velocity.velocity_update();
+        before = ros::WallTime::now();
         loop_rate.sleep();
+        std::cout << ros::WallTime::now() - before << '\n';
+        printf("#######################\n");
     }
     return 0;
 }
