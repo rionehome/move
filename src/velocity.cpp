@@ -3,18 +3,19 @@
 //
 #include "ros/ros.h"
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 #include "move/Velocity.h"
 #include <nav_msgs/Odometry.h>
 #include "../include/move/velocity.h"
 
-#define MAX_LINEAR 0.7 // m/s
-#define MAX_ANGULAR 1.9 // rad
-#define Hz 100
+
+#define Hz 10
 
 Velocity::Velocity(ros::NodeHandle *n)
 {
     printf("Start class of 'Velocity'\n");
     this->velocity_sub = n->subscribe("/move/velocity", 1000, &Velocity::callbackVelocity, this);
+    this->odometry_sub = n->subscribe("/odom", 1000, &Velocity::callbackOdometry, this);
     this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 }
 
@@ -26,59 +27,53 @@ Velocity::~Velocity()
 void Velocity::publishTwist(double liner_x, double angular_z)
 {
     geometry_msgs::Twist twist = geometry_msgs::Twist();
+    if (std::abs(liner_x) > MAX_LINEAR) liner_x = MAX_LINEAR * (std::signbit(liner_x) ? -1 : 1);
     twist.linear.x = liner_x;
     twist.linear.y = 0.0;
     twist.linear.z = 0.0;
     twist.angular.x = 0.0;
     twist.angular.y = 0.0;
+    //if (std::abs(angular_z) > MAX_ANGULAR) angular_z = MAX_ANGULAR * (std::signbit(angular_z) ? -1 : 1);
     twist.angular.z = angular_z;
     this->twist_pub.publish(twist);
 }
 
-void Velocity::callbackVelocity(const move::Velocity::ConstPtr &msg)
+void Velocity::linearPidControl(double Kp, double Ki, double Kd)
 {
     /*
-     * 直進、回転の加速度と速度の情報を受け取り.
-     * linear:0.7m/sが最大.
-     * angular:110deg/sが最大.
+     * Linear PID制御
      */
-    if (std::abs(msg->linear_rate) <= 1.0)
-        this->last_linear = msg->linear_rate * MAX_LINEAR;
-    if (std::abs(msg->angular_rate) <= 1.0)
-        this->last_angular = msg->angular_rate * MAX_ANGULAR;
+
+}
+
+double Velocity::angularPidControl(double Kp, double Ki, double Kd)
+{
+    /*
+     * angular PID制御
+     */
+    double p, i, d;
+    this->diff_angular[0] = this->diff_angular[1];
+    this->diff_angular[1] = target_angular - sensor_angular;
+    this->integral_angular += (this->diff_angular[1] + this->diff_angular[0]) / 2.0 * (1.0 / Hz);
+    p = Kp * this->diff_angular[1];
+    i = Ki * this->integral_angular;
+    d = Kd * (this->diff_angular[1] - this->diff_angular[0]) / (1.0 / Hz);
+    std::cout << p + i + d << '\n';
+    return p + i + d;
 }
 
 void Velocity::velocity_update()
 {
-    if (this->stack_linear != this->last_linear) {
-        this->stack_linear +=
-            this->last_linear_acceleration * (std::signbit(this->last_linear - this->stack_linear) ? -1 : 1);
+    double output_linear, output_angular;
 
-    }
-    if (std::abs(this->stack_linear) >= std::abs(this->last_linear)) {
-        //制限設定
-        this->stack_linear = this->last_linear;
-    }
-    else {
-        //速度更新
-        this->stack_linear += this->last_linear_acceleration * (std::signbit(this->last_linear) ? -1 : 1);
-    }
-    if (std::abs(this->stack_angular) >= std::abs(this->last_angular)) {
-        //制限設定
-        this->stack_angular = this->last_angular;
-    }
-    else {
-        //速度更新
-        this->stack_angular += this->last_angular_acceleration * (std::signbit(this->last_angular) ? -1 : 1);
-    }
+    this->stack_angular += this->angularPidControl(0.3, 0, 0);
+    output_linear = 0;
 
     //停止
-    if (this->last_linear_acceleration == 0.0 && this->last_linear == 0.0) this->stack_linear = 0.0;
-    if (this->last_angular_acceleration == 0.0 && this->last_angular == 0.0) this->stack_angular = 0.0;
+    //if (this->input_linear == 0.0) output_linear = 0.0;
+    //if (this->target_angular == 0.0) output_angular = 0.0;
 
-    if (!(this->stack_linear == 0.0 && this->stack_angular == 0.0))
-        this->publishTwist(this->stack_linear, this->stack_angular);
-
+    this->publishTwist(output_linear, this->stack_angular);
 }
 
 int main(int argc, char **argv)
@@ -93,8 +88,6 @@ int main(int argc, char **argv)
         velocity.velocity_update();
         before = ros::WallTime::now();
         loop_rate.sleep();
-        std::cout << ros::WallTime::now() - before << '\n';
-        printf("#######################\n");
     }
     return 0;
 }
