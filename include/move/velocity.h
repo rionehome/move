@@ -16,6 +16,7 @@ public:
 private:
     ros::Subscriber velocity_sub;
     ros::Subscriber odometry_sub;
+    ros::Subscriber wheel_drop_sub;
     ros::Publisher twist_pub;
     double stack_linear = 0.0;
     double stack_angular = 0.0;
@@ -27,6 +28,19 @@ private:
     double integral_angular = 0.0;
     double diff_linear[2]{};
     double diff_angular[2]{};
+    bool move_flag = false;
+
+    void callbackWheeDrop(const kobuki_msgs::WheelDropEvent::ConstPtr &msg)
+    {
+        /*
+         * タイヤの接地状態を受け取り
+         */
+        if (msg->state == 1) {
+            this->move_flag = false;
+            this->publishTwist(0.0, 0.0);
+            printf("タイヤが浮きました\n");
+        }
+    }
 
     void callbackVelocity(const move::Velocity::ConstPtr &msg)
     {
@@ -35,10 +49,20 @@ private:
          * linear:0.7m/sが最大.
          * angular:110deg/sが最大.
          */
-        if (std::abs(msg->linear_rate) <= 1.0)
+        if (std::abs(msg->linear_rate) <= 1.0) {
             this->target_linear = msg->linear_rate * MAX_LINEAR;
-        if (std::abs(msg->angular_rate) <= 1.0)
+            this->move_flag = true;
+        }
+        else {
+            printf("linear_rateの値が-1~1の範囲外です。\n");
+        }
+        if (std::abs(msg->angular_rate) <= 1.0) {
             this->target_angular = msg->angular_rate * MAX_ANGULAR;
+            this->move_flag = true;
+        }
+        else {
+            printf("angular_rateの値が-1~1の範囲外です。\n");
+        }
     }
 
     void callbackOdometry(const nav_msgs::Odometry::ConstPtr &msg)
@@ -53,6 +77,5 @@ private:
     double linearPidControl(double Kp, double Ki, double Kd);
     double angularPidControl(double Kp, double Ki, double Kd);
 };
-
 
 #endif //VELOCITY_H

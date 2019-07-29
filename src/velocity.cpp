@@ -4,6 +4,7 @@
 #include "ros/ros.h"
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <kobuki_msgs/WheelDropEvent.h>
 #include "move/Velocity.h"
 #include <nav_msgs/Odometry.h>
 #include "../include/move/velocity.h"
@@ -16,6 +17,7 @@ Velocity::Velocity(ros::NodeHandle *n)
     printf("Start class of 'Velocity'\n");
     this->velocity_sub = n->subscribe("/move/velocity", 1000, &Velocity::callbackVelocity, this);
     this->odometry_sub = n->subscribe("/odom", 1000, &Velocity::callbackOdometry, this);
+    this->wheel_drop_sub = n->subscribe("/mobile_base/events/wheel_drop", 1000, &Velocity::callbackOdometry, this);
     this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 }
 
@@ -27,7 +29,7 @@ Velocity::~Velocity()
 void Velocity::publishTwist(double liner_x, double angular_z)
 {
     geometry_msgs::Twist twist = geometry_msgs::Twist();
-    //if (std::abs(liner_x) > MAX_LINEAR) liner_x = MAX_LINEAR * (std::signbit(liner_x) ? -1 : 1);
+    if (std::abs(liner_x) > MAX_LINEAR) liner_x = MAX_LINEAR * (std::signbit(liner_x) ? -1 : 1);
     twist.linear.x = liner_x;
     twist.linear.y = 0.0;
     twist.linear.z = 0.0;
@@ -71,14 +73,18 @@ double Velocity::angularPidControl(double Kp, double Ki, double Kd)
 
 void Velocity::velocity_update()
 {
+    if (!this->move_flag)
+        return;
+
     this->stack_angular += this->angularPidControl(0.24, 0.01, 0.005);
-    this->stack_linear += this->linearPidControl(3, 0, 0);
+    this->stack_linear += this->linearPidControl(0.85, 0.1, 0.005);
 
     //停止
-    //if (this->target_linear == 0.0) output_linear = 0.0;
-    if (this->stack_angular != 0.0 && std::abs(this->stack_angular) < 0.01) {
-        this->stack_angular = 0.0;
-    }
+    if (std::abs(this->stack_linear) < 0.01 && this->target_linear == 0.0) this->stack_linear = 0.0;
+    if (std::abs(this->stack_angular) < 0.01 && this->target_angular == 0.0) this->stack_angular = 0.0;
+    if (this->stack_linear == 0.0 && this->stack_angular == 0.0 &&
+        this->target_linear == 0.0 && this->target_angular == 0.0)
+        this->move_flag = false;
 
     this->publishTwist(this->stack_linear, this->stack_angular);
 }
