@@ -17,7 +17,7 @@ Velocity::Velocity(ros::NodeHandle *n)
     printf("Start class of 'Velocity'\n");
     this->velocity_sub = n->subscribe("/move/velocity", 1000, &Velocity::callbackVelocity, this);
     this->odometry_sub = n->subscribe("/odom", 1000, &Velocity::callbackOdometry, this);
-    this->wheel_drop_sub = n->subscribe("/mobile_base/events/wheel_drop", 1000, &Velocity::callbackOdometry, this);
+    this->wheel_drop_sub = n->subscribe("/mobile_base/events/wheel_drop", 1000, &Velocity::callbackWheeDrop, this);
     this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 }
 
