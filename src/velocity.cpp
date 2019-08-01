@@ -52,7 +52,6 @@ double Velocity::linearPidControl(double Kp, double Ki, double Kd)
     p = Kp * this->diff_linear[1];
     i = Ki * this->integral_linear;
     d = Kd * (this->diff_linear[1] - this->diff_linear[0]) / (1.0 / Hz);
-    std::cout << p + i + d << '\n';
     return p + i + d;
 }
 
@@ -76,16 +75,22 @@ void Velocity::velocity_update()
     if (!this->move_flag)
         return;
 
-    this->stack_angular += this->angularPidControl(0.24, 0.01, 0.005);
-    this->stack_linear += this->linearPidControl(0.85, 0.1, 0.005);
+    this->stack_linear += this->linearPidControl(0.2, 0.01, 0.01);
+    this->stack_angular += this->angularPidControl(0.15, 0.01, 0.01);
 
     //停止
-    if (std::abs(this->stack_linear) < 0.01 && this->target_linear == 0.0) this->stack_linear = 0.0;
-    if (std::abs(this->stack_angular) < 0.01 && this->target_angular == 0.0) this->stack_angular = 0.0;
+    if (std::abs(this->stack_linear) < 0.02 && this->target_linear == 0.0) this->stack_linear = 0.0;
+    if (std::abs(this->stack_angular) < 0.05 && this->target_angular == 0.0) this->stack_angular = 0.0;
     if (this->stack_linear == 0.0 && this->stack_angular == 0.0 &&
         this->target_linear == 0.0 && this->target_angular == 0.0)
         this->move_flag = false;
+    //規定値オーバー
+    if (std::abs(this->stack_linear) > MAX_LINEAR)
+        this->stack_linear = MAX_LINEAR * (std::signbit(this->stack_linear) ? -1 : 1);
+    if (std::abs(this->stack_angular) > MAX_ANGULAR)
+        this->stack_angular = MAX_ANGULAR * (std::signbit(this->stack_angular) ? -1 : 1);
 
+    printf("linear:%f, angular%f\n", this->stack_linear, this->stack_angular);
     this->publishTwist(this->stack_linear, this->stack_angular);
 }
 

@@ -36,9 +36,11 @@ class Visualizer:
 
         t = np.arange(0, len(self.linear_stack), 1)
         plt.plot(t, self.linear_stack)
+        plt.plot(t, self.angular_stack)
         plt.xlim(0, 100)
-        plt.ylim(-1, 1)
+        plt.ylim(-3, 3)
         plt.hlines([self.target_linear], 0, 100, "blue", linestyles='dashed')
+        plt.hlines([self.target_angular], 0, 100, "red", linestyles='dashed')
         plt.pause(.01)
 
 
