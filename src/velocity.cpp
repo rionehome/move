@@ -75,8 +75,8 @@ void Velocity::velocity_update()
     if (!this->move_flag)
         return;
 
-    this->stack_linear += this->linearPidControl(0.2, 0.01, 0.01);
-    this->stack_angular += this->angularPidControl(0.15, 0.01, 0.01);
+    this->stack_linear += this->linearPidControl(0.1, 0, 0);
+    this->stack_angular += this->angularPidControl(0.24, 0.01, 0.005);
 
     //停止
     if (std::abs(this->stack_linear) < 0.02 && this->target_linear == 0.0) this->stack_linear = 0.0;
