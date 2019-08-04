@@ -199,12 +199,12 @@ include_directories(
 
 
 add_definitions(-std=c++11)
-add_executable(MovementPointDesignation src/MovementPointDesignation.cpp include/move/MovementPointDesignation_H.h)
-target_link_libraries(MovementPointDesignation ${catkin_LIBRARIES})
-add_executable(MovementVelocityDesignation src/MovementVelocityDesignation.cpp include/move/MovementVelocityDesignation_H.h)
-target_link_libraries(MovementVelocityDesignation ${catkin_LIBRARIES})
-add_executable(MovementAmountDesignation src/MovementAmountDesignation.cpp include/move/MovementAmountDesignation_H.h)
-target_link_libraries(MovementAmountDesignation ${catkin_LIBRARIES})
+#add_executable(MovementPointDesignation src/MovementPointDesignation.cpp include/move/MovementPointDesignation_H.h)
+#target_link_libraries(MovementPointDesignation ${catkin_LIBRARIES})
+#add_executable(MovementVelocityDesignation src/MovementVelocityDesignation.cpp include/move/MovementVelocityDesignation_H.h)
+#target_link_libraries(MovementVelocityDesignation ${catkin_LIBRARIES})
+#add_executable(MovementAmountDesignation src/MovementAmountDesignation.cpp include/move/MovementAmountDesignation_H.h)
+#target_link_libraries(MovementAmountDesignation ${catkin_LIBRARIES})
 add_executable(velocity src/velocity.cpp include/move/velocity.h)
 add_dependencies(velocity ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(velocity ${catkin_LIBRARIES})
