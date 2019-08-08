@@ -40,14 +40,14 @@ void Amount::publishTwist(double liner_x, double angular_z)
     this->twist_pub.publish(twist);
 }
 
-double Amount::linearPidControl(double Kp, double Ki, double Kd)
+double Amount::distancePidControl(double Kp, double Ki, double Kd)
 {
     /*
      * Linear PID制御
      */
     double p, i, d;
     this->diff_linear[0] = this->diff_linear[1];
-    this->diff_linear[1] = target_linear - sensor_linear;
+    this->diff_linear[1] = this->target_distance - this->sensor_distance;
     this->integral_linear += (this->diff_linear[1] + this->diff_linear[0]) / 2.0 * (1.0 / Hz);
     p = Kp * this->diff_linear[1];
     i = Ki * this->integral_linear;
@@ -62,7 +62,7 @@ double Amount::angularPidControl(double Kp, double Ki, double Kd)
      */
     double p, i, d;
     this->diff_angular[0] = this->diff_angular[1];
-    this->diff_angular[1] = target_angular - sensor_angular;
+    this->diff_angular[1] = target_angle - sensor_angular;
     this->integral_angular += (this->diff_angular[1] + this->diff_angular[0]) / 2.0 * (1.0 / Hz);
     p = Kp * this->diff_angular[1];
     i = Ki * this->integral_angular;
@@ -75,6 +75,7 @@ void Amount::amount_update()
     if (!this->move_flag)
         return;
 
+    this->publishTwist(this->distancePidControl(0.4, 0.25, 0.1), 0);
 }
 
 int main(int argc, char **argv)

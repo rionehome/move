@@ -14,7 +14,7 @@ class Visualizer:
         self.target_angular = 0
         self.target_linear = 0
 
-        rospy.init_node("move_visualizer")
+        rospy.init_node("move_visualizer_velocity")
         rospy.Subscriber("/odom", Odometry, self.odometry_callback, queue_size=1)
         rospy.Subscriber("/move/velocity", Velocity, self.velocity_callback)
 
