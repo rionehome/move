@@ -18,7 +18,7 @@ Amount::Amount(ros::NodeHandle *n)
     this->amount_sub = n->subscribe("/move/amount", 1000, &Amount::callbackAmount, this);
     this->odometry_sub = n->subscribe("/odom", 1000, &Amount::callbackOdometry, this);
     this->wheel_drop_sub = n->subscribe("/mobile_base/events/wheel_drop", 1000, &Amount::callbackWheeDrop, this);
-    this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/amount", 1000);
+    this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
 }
 
 Amount::~Amount()
@@ -75,23 +75,6 @@ void Amount::amount_update()
     if (!this->move_flag)
         return;
 
-    this->stack_linear += this->linearPidControl(0.1, 0, 0);
-    this->stack_angular += this->angularPidControl(0.24, 0.01, 0.005);
-
-    //停止
-    if (std::abs(this->stack_linear) < 0.02 && this->target_linear == 0.0) this->stack_linear = 0.0;
-    if (std::abs(this->stack_angular) < 0.05 && this->target_angular == 0.0) this->stack_angular = 0.0;
-    if (this->stack_linear == 0.0 && this->stack_angular == 0.0 &&
-        this->target_linear == 0.0 && this->target_angular == 0.0)
-        this->move_flag = false;
-    //規定値オーバー
-    if (std::abs(this->stack_linear) > MAX_LINEAR)
-        this->stack_linear = MAX_LINEAR * (std::signbit(this->stack_linear) ? -1 : 1);
-    if (std::abs(this->stack_angular) > MAX_ANGULAR)
-        this->stack_angular = MAX_ANGULAR * (std::signbit(this->stack_angular) ? -1 : 1);
-
-    printf("linear:%f, angular%f\n", this->stack_linear, this->stack_angular);
-    this->publishTwist(this->stack_linear, this->stack_angular);
 }
 
 int main(int argc, char **argv)

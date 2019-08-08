@@ -21,7 +21,11 @@ private:
     double stack_linear = 0.0;
     double stack_angular = 0.0;
     double sensor_linear = 0.0;
+    double sensor_x = 0.0;
+    double sensor_y = 0.0;
+    double sensor_distance = 0.0;
     double sensor_angular = 0.0;
+    double sensor_angle = 0.0;
     double target_linear = 0.0;
     double target_angular = 0.0;
     double integral_linear = 0.0;
@@ -29,6 +33,14 @@ private:
     double diff_linear[2]{};
     double diff_angular[2]{};
     bool move_flag = false;
+
+    static double toAngle(double rad)
+    { return rad * 180 / M_PI; }
+
+    double toQuaternion_ang(double w, double z)
+    {
+        return std::abs((z > 0 ? 1 : 360) - this->toAngle(acos(w) * 2));
+    }
 
     void callbackWheeDrop(const kobuki_msgs::WheelDropEvent::ConstPtr &msg)
     {
@@ -72,6 +84,9 @@ private:
          */
         this->sensor_linear = msg->twist.twist.linear.x;
         this->sensor_angular = msg->twist.twist.angular.z;
+        this->sensor_x = msg->pose.pose.position.x;
+        this->sensor_y = msg->pose.pose.position.y;
+        this->sensor_angle = toQuaternion_ang(msg->pose.pose.orientation.w, msg->pose.pose.orientation.z);
     }
     void publishTwist(double liner_x, double angular_z);
     double linearPidControl(double Kp, double Ki, double Kd);
