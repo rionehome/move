@@ -7,6 +7,7 @@
 #include <kobuki_msgs/WheelDropEvent.h>
 #include "move/Amount.h"
 #include <nav_msgs/Odometry.h>
+#include <move/Velocity.h>
 #include "../include/move/amount.h"
 
 
@@ -17,27 +18,13 @@ Amount::Amount(ros::NodeHandle *n)
     printf("Start class of 'Amount'\n");
     this->amount_sub = n->subscribe("/move/amount", 1000, &Amount::callbackAmount, this);
     this->odometry_sub = n->subscribe("/odom", 1000, &Amount::callbackOdometry, this);
-    this->wheel_drop_sub = n->subscribe("/mobile_base/events/wheel_drop", 1000, &Amount::callbackWheeDrop, this);
     this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
+    this->velocity_pub = n->advertise<move::Velocity>("/move/velocity", 1000);
 }
 
 Amount::~Amount()
 {
     printf("Shutdown class of 'Amount'\n");
-}
-
-void Amount::publishTwist(double liner_x, double angular_z)
-{
-    geometry_msgs::Twist twist = geometry_msgs::Twist();
-    if (std::abs(liner_x) > MAX_LINEAR) liner_x = MAX_LINEAR * (std::signbit(liner_x) ? -1 : 1);
-    twist.linear.x = liner_x;
-    twist.linear.y = 0.0;
-    twist.linear.z = 0.0;
-    twist.angular.x = 0.0;
-    twist.angular.y = 0.0;
-    if (std::abs(angular_z) > MAX_ANGULAR) angular_z = MAX_ANGULAR * (std::signbit(angular_z) ? -1 : 1);
-    twist.angular.z = angular_z;
-    this->twist_pub.publish(twist);
 }
 
 double Amount::distancePidControl(double Kp, double Ki, double Kd)
@@ -62,7 +49,7 @@ double Amount::angularPidControl(double Kp, double Ki, double Kd)
      */
     double p, i, d;
     this->diff_angular[0] = this->diff_angular[1];
-    this->diff_angular[1] = target_angle - sensor_angular;
+    this->diff_angular[1] = target_angle - this->sensor_angle;
     this->integral_angular += (this->diff_angular[1] + this->diff_angular[0]) / 2.0 * (1.0 / Hz);
     p = Kp * this->diff_angular[1];
     i = Ki * this->integral_angular;
@@ -74,8 +61,15 @@ void Amount::amount_update()
 {
     if (!this->move_flag)
         return;
+    std::cout << this->sensor_distance << '\n';
+    double result_velocity = this->distancePidControl(1.25, 0.009, 0.004);
+    if (std::abs(result_velocity) > MAX_LINEAR)
+        result_velocity = MAX_LINEAR * (std::signbit(result_velocity) ? -1 : 1);
 
-    this->publishTwist(this->distancePidControl(0.4, 0.25, 0.1), 0);
+    move::Velocity velocity_data;
+    velocity_data.linear_rate = result_velocity;
+    velocity_data.angular_rate = 0;
+    this->velocity_pub.publish(velocity_data);
 }
 
 int main(int argc, char **argv)

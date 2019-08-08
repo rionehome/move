@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import math
 
+import numpy
 import rospy
 from nav_msgs.msg import Odometry
 from move.msg import Amount
@@ -26,7 +27,7 @@ class Visualizer:
         rospy.Subscriber("/move/amount", Amount, self.amount_callback)
 
     def advanced_distance(self, x, y):
-        return math.sqrt((x - self.init_x) ** 2 + (y - self.init_y) ** 2)
+        return math.sqrt((x - self.init_x) ** 2 + (y - self.init_y) ** 2) * numpy.sign(x - self.init_x)
 
     def amount_callback(self, msg):
         # type: (Amount) -> None
