@@ -61,29 +61,42 @@ void Amount::amount_update()
     if (!this->move_flag)
         return;
 
-    double result_linear, result_angular;
+    double result_linear_rate, result_angular_rate;
     move::Velocity velocity_data;
 
-    std::cout << this->target_distance - this->sensor_distance << '\n';
+    result_linear_rate = this->distancePidControl(1.5, 0.01, 0.0045) / MAX_LINEAR;
+    if (std::abs(result_linear_rate) > 1.0)
+        result_linear_rate = std::signbit(result_linear_rate) ? -1 : 1;
+    if (this->target_distance == 0)
+        result_linear_rate = 0;
+
+    result_angular_rate = this->angularPidControl(0.03, 0.0001, 0.000035) / MAX_ANGULAR;
+    if (std::abs(result_angular_rate) > 1.0)
+        result_angular_rate = std::signbit(result_angular_rate) ? -1 : 1;
+    if (this->target_angle == 0)
+        result_angular_rate = 0;
+
+    //終了判定
+    bool finish_distance = false;
+    bool finish_angle = false;
     if (std::abs(this->diff_linear[1] - this->diff_linear[0]) < 0.005
         && std::abs(this->target_distance - this->sensor_distance) < 0.01) {
-        this->move_flag = false;
-        velocity_data.linear_rate = 0;
-        velocity_data.angular_rate = 0;
-        this->velocity_pub.publish(velocity_data);
-        printf("finish\n");
-        return;
+        finish_distance = true;
+        result_linear_rate = 0;
     }
-    result_linear = this->distancePidControl(1.5, 0.01, 0.0045);
-    if (std::abs(result_linear) > MAX_LINEAR)
-        result_linear = MAX_LINEAR * (std::signbit(result_linear) ? -1 : 1);
+    if (std::abs(this->diff_angular[1] - this->diff_angular[0]) < 0.1
+        && std::abs(this->target_angle - this->sensor_angle) < 5) {
+        finish_angle = true;
+        result_angular_rate = 0;
+    }
 
-    result_angular = this->angularPidControl(1, 0, 0);
-    if (std::abs(result_angular) > MAX_ANGULAR)
-        result_angular = MAX_ANGULAR * (std::signbit(result_angular) ? -1 : 1);
+    if (finish_distance && finish_angle)
+        move_flag = false;
 
-    velocity_data.linear_rate = result_linear;
-    velocity_data.angular_rate = 0;
+    printf("distance:%f, angle%f\n", this->sensor_distance, this->sensor_angle);
+
+    velocity_data.linear_rate = result_linear_rate;
+    velocity_data.angular_rate = result_angular_rate;
     this->velocity_pub.publish(velocity_data);
 }
 

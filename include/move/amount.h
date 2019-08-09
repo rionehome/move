@@ -24,13 +24,12 @@ private:
     double sensor_q_w = 0.0;
     double initial_x = 0.0;
     double initial_y = 0.0;
-    double initial_q_z = 0.0;
-    double initial_q_w = 0.0;
+    double last_q_w = 0.0;
+    double last_q_z = 0.0;
     double sensor_distance = 0.0;
     double sensor_angle = 0.0;
     double target_distance = 0.0;
     double target_angle = 0.0;
-
     double integral_linear = 0.0;
     double integral_angular = 0.0;
     double diff_linear[2]{};
@@ -50,10 +49,15 @@ private:
         return hypot(x - initial_x, y - initial_y) * (std::signbit(x - initial_x) ? -1 : 1);
     }
 
-    double historyAngule(double angle)
+    double historyAngle(double angle)
     {
         //std::cout << angle - this->sensor_angle << '\n';
-        return 0;
+        double delta_angle = angle - toQuaternion_ang(this->last_q_w, this->last_q_z);
+        this->last_q_w = this->sensor_q_w;
+        this->last_q_z = this->sensor_q_z;
+        if (std::abs(delta_angle) > 180)
+            delta_angle = (360 - std::abs(delta_angle)) * (std::signbit(delta_angle) ? 1 : -1);
+        return delta_angle;
     }
 
     void callbackAmount(const move::Amount::ConstPtr &msg)
@@ -67,8 +71,8 @@ private:
         this->target_angle = msg->angle;
         this->initial_x = this->sensor_x;
         this->initial_y = this->sensor_y;
-        this->initial_q_z = this->sensor_q_z;
-        this->initial_q_w = this->sensor_q_w;
+        this->last_q_w = this->sensor_q_w;
+        this->last_q_z = this->sensor_q_z;
     }
 
     void callbackOdometry(const nav_msgs::Odometry::ConstPtr &msg)
@@ -78,9 +82,10 @@ private:
          */
         this->sensor_x = msg->pose.pose.position.x;
         this->sensor_y = msg->pose.pose.position.y;
-        this->sensor_distance = this->historyDistance(msg->pose.pose.position.x, msg->pose.pose.position.y);
-        this->sensor_angle +=
-            this->historyAngule(this->toQuaternion_ang(msg->pose.pose.orientation.w, msg->pose.pose.orientation.z));
+        this->sensor_q_w = msg->pose.pose.orientation.w;
+        this->sensor_q_z = msg->pose.pose.orientation.z;
+        this->sensor_distance = this->historyDistance(this->sensor_x, this->sensor_y);
+        this->sensor_angle += this->historyAngle(this->toQuaternion_ang(this->sensor_q_w, this->sensor_q_z));
     }
     double distancePidControl(double Kp, double Ki, double Kd);
     double angularPidControl(double Kp, double Ki, double Kd);

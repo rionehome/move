@@ -76,11 +76,11 @@ void Velocity::velocity_update()
         return;
 
     this->stack_linear += this->linearPidControl(0.1, 0, 0);
-    this->stack_angular += this->angularPidControl(0.7, 0.05, 0);
+    this->stack_angular += this->angularPidControl(0.3, 0.05, 0.001);
 
     //停止
     if (std::abs(this->stack_linear) < 0.02 && this->target_linear == 0.0) this->stack_linear = 0.0;
-    if (std::abs(this->stack_angular) < 0.05 && this->target_angular == 0.0) this->stack_angular = 0.0;
+    if (std::abs(this->stack_angular) < 0.1 && this->target_angular == 0.0) this->stack_angular = 0.0;
     if (this->stack_linear == 0.0 && this->stack_angular == 0.0 &&
         this->target_linear == 0.0 && this->target_angular == 0.0)
         this->move_flag = false;
