@@ -4,7 +4,6 @@
 #include "ros/ros.h"
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
-#include <kobuki_msgs/WheelDropEvent.h>
 #include "move/Amount.h"
 #include <nav_msgs/Odometry.h>
 #include <move/Velocity.h>
@@ -49,7 +48,7 @@ double Amount::angularPidControl(double Kp, double Ki, double Kd)
      */
     double p, i, d;
     this->diff_angular[0] = this->diff_angular[1];
-    this->diff_angular[1] = target_angle - this->sensor_angle;
+    this->diff_angular[1] = this->target_angle - this->sensor_angle;
     this->integral_angular += (this->diff_angular[1] + this->diff_angular[0]) / 2.0 * (1.0 / Hz);
     p = Kp * this->diff_angular[1];
     i = Ki * this->integral_angular;
@@ -61,13 +60,29 @@ void Amount::amount_update()
 {
     if (!this->move_flag)
         return;
-    std::cout << this->sensor_distance << '\n';
-    double result_velocity = this->distancePidControl(1.25, 0.009, 0.004);
-    if (std::abs(result_velocity) > MAX_LINEAR)
-        result_velocity = MAX_LINEAR * (std::signbit(result_velocity) ? -1 : 1);
 
+    double result_linear, result_angular;
     move::Velocity velocity_data;
-    velocity_data.linear_rate = result_velocity;
+
+    std::cout << this->target_distance - this->sensor_distance << '\n';
+    if (std::abs(this->diff_linear[1] - this->diff_linear[0]) < 0.005
+        && std::abs(this->target_distance - this->sensor_distance) < 0.01) {
+        this->move_flag = false;
+        velocity_data.linear_rate = 0;
+        velocity_data.angular_rate = 0;
+        this->velocity_pub.publish(velocity_data);
+        printf("finish\n");
+        return;
+    }
+    result_linear = this->distancePidControl(1.5, 0.01, 0.0045);
+    if (std::abs(result_linear) > MAX_LINEAR)
+        result_linear = MAX_LINEAR * (std::signbit(result_linear) ? -1 : 1);
+
+    result_angular = this->angularPidControl(1, 0, 0);
+    if (std::abs(result_angular) > MAX_ANGULAR)
+        result_angular = MAX_ANGULAR * (std::signbit(result_angular) ? -1 : 1);
+
+    velocity_data.linear_rate = result_linear;
     velocity_data.angular_rate = 0;
     this->velocity_pub.publish(velocity_data);
 }
