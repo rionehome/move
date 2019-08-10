@@ -7,7 +7,10 @@ find_package(catkin REQUIRED COMPONENTS
         roscpp
         std_msgs
         message_generation
+        actionlib_msgs
+        actionlib
         )
+find_package(Boost REQUIRED COMPONENTS system)
 
 add_message_files(
         FILES
@@ -23,23 +26,24 @@ add_message_files(
 # )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  move.action
+)
 
 generate_messages(
         DEPENDENCIES
         std_msgs
+        actionlib_msgs
 )
 
 catkin_package(
-        CATKIN_DEPENDS roscpp std_msgs
+        CATKIN_DEPENDS roscpp std_msgs actionlib_msgs actionlib
+        DEPENDS Boost
 )
 
 include_directories(
-        ${catkin_INCLUDE_DIRS}
+        ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
 )
 
 #add_executable(MovementPointDesignation src/MovementPointDesignation.cpp include/move/MovementPointDesignation_H.h)
