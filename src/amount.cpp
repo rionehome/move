@@ -7,6 +7,8 @@
 #include "move/Amount.h"
 #include <nav_msgs/Odometry.h>
 #include <move/Velocity.h>
+#include <move/AmountAction.h>
+#include <actionlib/server/simple_action_server.h>
 #include "../include/move/amount.h"
 
 
@@ -15,15 +17,43 @@
 Amount::Amount(ros::NodeHandle *n)
 {
     printf("Start class of 'Amount'\n");
-    this->amount_sub = n->subscribe("/move/amount", 1000, &Amount::callbackAmount, this);
+    //this->amount_sub = n->subscribe("/move/amount", 1000, &Amount::callbackAmount, this);
     this->odometry_sub = n->subscribe("/odom", 1000, &Amount::callbackOdometry, this);
     this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
     this->velocity_pub = n->advertise<move::Velocity>("/move/velocity", 1000);
+    this->server = new Server(*n, "/move/amount", false);
+    this->server->start();
 }
 
 Amount::~Amount()
 {
     printf("Shutdown class of 'Amount'\n");
+}
+
+void Amount::rosUpdate()
+{
+    ros::spinOnce();
+    //actionの更新が確認された場合
+    if (this->server->isNewGoalAvailable()) {
+        this->current_goal = this->server->acceptNewGoal();
+        this->move_flag = true;
+        this->sensor_angle = 0;
+        this->target_distance = this->current_goal->amount.distance;
+        this->target_angle = this->current_goal->amount.angle;
+        this->initial_x = this->sensor_x;
+        this->initial_y = this->sensor_y;
+        this->last_q_w = this->sensor_q_w;
+        this->last_q_z = this->sensor_q_z;
+    }
+    //actionの中断が確認された場合
+    if (this->server->isPreemptRequested()) {
+        move::Velocity velocity_data;
+        move_flag = false;
+        velocity_data.linear_rate = 0.0;
+        velocity_data.angular_rate = 0.0;
+        this->velocity_pub.publish(velocity_data);
+        this->server->setAborted();
+    }
 }
 
 double Amount::distancePidControl(double Kp, double Ki, double Kd)
@@ -76,9 +106,11 @@ void Amount::amount_update()
     if (this->target_angle == 0)
         result_angular_rate = 0;
 
+    //action feedback
+    printf("distance:%f, angle%f\n", this->sensor_distance, this->sensor_angle);
+
     //終了判定
-    bool finish_distance = false;
-    bool finish_angle = false;
+    bool finish_distance = false, finish_angle = false;
     if (std::abs(this->diff_linear[1] - this->diff_linear[0]) < 0.005
         && std::abs(this->target_distance - this->sensor_distance) < 0.01) {
         finish_distance = true;
@@ -90,10 +122,12 @@ void Amount::amount_update()
         result_angular_rate = 0;
     }
 
-    if (finish_distance && finish_angle)
+    //終了
+    if (finish_distance && finish_angle) {
         move_flag = false;
-
-    printf("distance:%f, angle%f\n", this->sensor_distance, this->sensor_angle);
+        printf("finish\n");
+        this->server->setSucceeded();
+    }
 
     velocity_data.linear_rate = result_linear_rate;
     velocity_data.angular_rate = result_angular_rate;
@@ -107,7 +141,7 @@ int main(int argc, char **argv)
     ros::Rate loop_rate(Hz);
     Amount amount = Amount(&n);
     while (ros::ok()) {
-        ros::spinOnce();
+        amount.rosUpdate();
         amount.amount_update();
         loop_rate.sleep();
     }
