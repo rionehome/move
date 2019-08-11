@@ -46,7 +46,7 @@ void Amount::rosUpdate()
         this->last_q_z = this->sensor_q_z;
     }
     //actionの中断が確認された場合
-    if (this->server->isPreemptRequested()) {
+    if (this->server->isActive() && this->server->isPreemptRequested()) {
         move::Velocity velocity_data;
         move_flag = false;
         velocity_data.linear_rate = 0.0;
@@ -108,6 +108,10 @@ void Amount::amount_update()
 
     //action feedback
     printf("distance:%f, angle%f\n", this->sensor_distance, this->sensor_angle);
+    move::AmountFeedback feedback;
+    feedback.current_amount.distance = this->sensor_distance;
+    feedback.current_amount.angle = this->sensor_angle;
+    this->server->publishFeedback(feedback);
 
     //終了判定
     bool finish_distance = false, finish_angle = false;

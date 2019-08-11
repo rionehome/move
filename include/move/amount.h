@@ -19,7 +19,6 @@ public:
     void rosUpdate();
 
 private:
-    ros::Subscriber amount_sub;
     ros::Subscriber odometry_sub;
     ros::Publisher twist_pub;
     ros::Publisher velocity_pub;
@@ -60,7 +59,7 @@ private:
     double historyAngle(double angle)
     {
         //std::cout << angle - this->sensor_angle << '\n';
-        double delta_angle = angle - toQuaternion_ang(this->last_q_w, this->last_q_z);
+        double delta_angle = angle - this->toQuaternion_ang(this->last_q_w, this->last_q_z);
         this->last_q_w = this->sensor_q_w;
         this->last_q_z = this->sensor_q_z;
         if (std::abs(delta_angle) > 180)
