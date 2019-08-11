@@ -35,7 +35,9 @@ private:
     double last_q_z = 0.0;
     double sensor_distance = 0.0;
     double sensor_angle = 0.0;
+    double target_linear_rate = 0.0;
     double target_distance = 0.0;
+    double target_angular_rate = 0.0;
     double target_angle = 0.0;
     double integral_linear = 0.0;
     double integral_angular = 0.0;
