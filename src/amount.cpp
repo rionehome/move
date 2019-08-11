@@ -38,9 +38,9 @@ void Amount::rosUpdate()
         this->current_goal = this->server->acceptNewGoal();
         this->move_flag = true;
         this->sensor_angle = 0;
-        this->target_linear_rate = this->current_goal->amount.velocity.linear_rate;
+        this->target_linear_rate = this->current_goal->velocity.linear_rate;
         this->target_distance = this->current_goal->amount.distance;
-        this->target_angular_rate = this->current_goal->amount.velocity.angular_rate;
+        this->target_angular_rate = this->current_goal->velocity.angular_rate;
         this->target_angle = this->current_goal->amount.angle;
         this->initial_x = this->sensor_x;
         this->initial_y = this->sensor_y;

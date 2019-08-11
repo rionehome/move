@@ -1,5 +1,6 @@
 # goal definition
-move/Amount amount
+Amount amount
+Velocity velocity
 ---
 # result definition
 bool finished
