@@ -1,0 +1,8 @@
+# goal definition
+move/Amount amount
+---
+# result definition
+bool finished
+---
+# feedback definition
+move/Amount current_amount
