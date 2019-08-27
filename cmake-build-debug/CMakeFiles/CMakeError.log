@@ -1,0 +1,55 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_c328b/fast 
+/usr/bin/make -f CMakeFiles/cmTC_c328b.dir/build.make CMakeFiles/cmTC_c328b.dir/build
+make[1]: ディレクトリ '/home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp' に入ります
+Building C object CMakeFiles/cmTC_c328b.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTC_c328b.dir/CheckSymbolExists.c.o   -c /home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_c328b
+/opt/clion/clion-2019.2/bin/cmake/linux/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c328b.dir/link.txt --verbose=1
+/usr/bin/cc      -rdynamic CMakeFiles/cmTC_c328b.dir/CheckSymbolExists.c.o  -o cmTC_c328b 
+CMakeFiles/cmTC_c328b.dir/CheckSymbolExists.c.o: 関数 `main' 内:
+CheckSymbolExists.c:(.text+0x1b): `pthread_create' に対する定義されていない参照です
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_c328b.dir/build.make:86: recipe for target 'cmTC_c328b' failed
+make[1]: *** [cmTC_c328b] Error 1
+make[1]: ディレクトリ '/home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp' から出ます
+Makefile:121: recipe for target 'cmTC_c328b/fast' failed
+make: *** [cmTC_c328b/fast] Error 2
+
+File /home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_30d4c/fast 
+/usr/bin/make -f CMakeFiles/cmTC_30d4c.dir/build.make CMakeFiles/cmTC_30d4c.dir/build
+make[1]: ディレクトリ '/home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp' に入ります
+Building C object CMakeFiles/cmTC_30d4c.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_30d4c.dir/CheckFunctionExists.c.o   -c /opt/clion/clion-2019.2/bin/cmake/linux/share/cmake-3.14/Modules/CheckFunctionExists.c
+Linking C executable cmTC_30d4c
+/opt/clion/clion-2019.2/bin/cmake/linux/bin/cmake -E cmake_link_script CMakeFiles/cmTC_30d4c.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_30d4c.dir/CheckFunctionExists.c.o  -o cmTC_30d4c -lpthreads 
+/usr/bin/ld: -lpthreads が見つかりません
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_30d4c.dir/build.make:86: recipe for target 'cmTC_30d4c' failed
+make[1]: *** [cmTC_30d4c] Error 1
+make[1]: ディレクトリ '/home/migly/catkin_ws/src/move/cmake-build-debug/CMakeFiles/CMakeTmp' から出ます
+Makefile:121: recipe for target 'cmTC_30d4c/fast' failed
+make: *** [cmTC_30d4c/fast] Error 2
+
+

@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/migly/catkin_ws/src/move/cmake-build-debug/devel/setup.sh

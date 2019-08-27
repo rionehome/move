@@ -42,7 +42,7 @@ private:
         }
     }
 
-    void callbackVelocity(const move::Velocity::ConstPtr &msg)
+    void callbackVelocity(const rione_msgs::Velocity::ConstPtr &msg)
     {
         /*
          * 直進、回転の加速度と速度の情報を受け取り.

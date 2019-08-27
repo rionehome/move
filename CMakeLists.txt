@@ -6,27 +6,12 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
         roscpp
         std_msgs
+        rione_msgs
         message_generation
         actionlib_msgs
         actionlib
         )
 
-find_package(Boost REQUIRED COMPONENTS system)
-
-add_message_files(
-        FILES
-        Velocity.msg
-        Amount.msg
-)
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate actions in the 'action' folder
 add_action_files(
         FILES
         Amount.action
@@ -34,14 +19,15 @@ add_action_files(
 
 generate_messages(
         DEPENDENCIES
+        rione_msgs
         actionlib
         actionlib_msgs
 )
 
-#catkin_package(
-#        CATKIN_DEPENDS roscpp std_msgs actionlib_msgs actionlib
-#        DEPENDS Boost
-#)
+catkin_package(
+        CATKIN_DEPENDS roscpp std_msgs rione_msgs actionlib_msgs actionlib
+        #        DEPENDS Boost
+)
 
 include_directories(
         # include

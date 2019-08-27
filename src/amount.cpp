@@ -1,12 +1,11 @@
 //
 // Created by migly-home on 19/07/26.
 //
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
-#include "move/Amount.h"
-#include <nav_msgs/Odometry.h>
-#include <move/Velocity.h>
+#include <rione_msgs/Amount.h>
+#include <rione_msgs/Velocity.h>
 #include <move/AmountAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include "../include/move/amount.h"
@@ -20,7 +19,7 @@ Amount::Amount(ros::NodeHandle *n)
     //this->amount_sub = n->subscribe("/move/amount", 1000, &Amount::callbackAmount, this);
     this->odometry_sub = n->subscribe("/odom", 1000, &Amount::callbackOdometry, this);
     this->twist_pub = n->advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1000);
-    this->velocity_pub = n->advertise<move::Velocity>("/move/velocity", 1000);
+    this->velocity_pub = n->advertise<rione_msgs::Velocity>("/move/velocity", 1000);
     this->server = new Server(*n, "/move/amount", false);
     this->server->start();
 }
@@ -49,7 +48,7 @@ void Amount::rosUpdate()
     }
     //actionの中断が確認された場合
     if (this->server->isActive() && this->server->isPreemptRequested()) {
-        move::Velocity velocity_data;
+        rione_msgs::Velocity velocity_data;
         move_flag = false;
         velocity_data.linear_rate = 0.0;
         velocity_data.angular_rate = 0.0;
@@ -94,7 +93,7 @@ void Amount::amount_update()
         return;
 
     double result_linear_rate, result_angular_rate;
-    move::Velocity velocity_data;
+    rione_msgs::Velocity velocity_data;
 
     result_linear_rate = this->distancePidControl(1.5, 0.01, 0.0045) / MAX_LINEAR;
     if (std::abs(result_linear_rate) > 1.0)
